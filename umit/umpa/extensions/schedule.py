@@ -26,7 +26,7 @@ Schedule feature is for sending packets.
  1. delay before start sending
  2. interval before each packet
 
-send() function is provided and new method for umpa.Socket objects is added.
+send() function is provided and new method for umit.umpa.Socket objects is added.
 
 @attention: This extension works in blocking-way. The main process is being
 blocked during delays. It will be rewritten in the asynchronous way soon.
@@ -35,8 +35,8 @@ Be patient.
 
 import time
 
-import umpa
-from umpa.utils.exceptions import UMPAException
+import umit.umpa
+from umit.umpa.utils.exceptions import UMPAException
 
 def _sleep(delay):
     """
@@ -65,8 +65,8 @@ def send(delay, packets=None, *args, **kwargs):
       - detach - send packets in the background (B{type}: C{bool})
         (not implemented yet),
       - interval - set interval between packets (B{type}: C{int}),
-      - socket - use passed socket, otherwise create new umpa.Socket() object
-        (B{type}: C{umpa.Socket})
+      - socket - use passed socket, otherwise create new umit.umpa.Socket() object
+        (B{type}: C{umit.umpa.Socket})
 
     @rtype: C{list}
     @return: sent bits of each packet.
@@ -75,7 +75,7 @@ def send(delay, packets=None, *args, **kwargs):
     # parsing passed options
     options = { 'detach'    : False,
                 'interval'  : None,
-                'socket'    : umpa.Socket(),
+                'socket'    : umit.umpa.Socket(),
                 }
     for opt in kwargs:
         if opt not in options:
@@ -127,8 +127,8 @@ def _send_schedule(self, delay, *packets, **options):
       - detach - send packets in the background (B{type}: C{bool})
         (not implemented yet),
       - interval - set interval between packets (B{type}: C{int}),
-      - socket - use passed socket, otherwise create new umpa.Socket() object
-        (B{type}: C{umpa.Socket})
+      - socket - use passed socket, otherwise create new umit.umpa.Socket() object
+        (B{type}: C{umit.umpa.Socket})
 
     @rtype: C{list}
     @return: sent bits of each packet.
@@ -136,4 +136,4 @@ def _send_schedule(self, delay, *packets, **options):
 
     return send(delay, socket=self, *packets, **options)
 
-umpa.Socket.send_schedule = _send_schedule
+umit.umpa.Socket.send_schedule = _send_schedule

@@ -23,9 +23,9 @@
 ICMP (Internet Control Message Protocol) protocol implementation.
 """
 
-from umpa.protocols import _consts
-from umpa.protocols import _fields
-from umpa.protocols import _protocols
+from umit.umpa.protocols import _consts
+from umit.umpa.protocols import _fields
+from umit.umpa.protocols import _protocols
 
 __all__ = [ "ICMP", ]
 

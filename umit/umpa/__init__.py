@@ -38,8 +38,8 @@ and official website U{http://umpa.umitproject.org}
 import os
 import sys
 
-from umpa._packets import Packet
-from umpa._sockets import Socket
+from umit.umpa._packets import Packet
+from umit.umpa._sockets import Socket
 
 # UMPA handles with the local directory $HOME/.umpa
 # especially with the $HOME/.umpa/umpa_plugins

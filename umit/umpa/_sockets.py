@@ -30,7 +30,7 @@ But it's correctly to use socket module directly if needed.
 
 import socket
 
-from umpa.utils.exceptions import UMPAException, UMPANotPermittedException
+from umit.umpa.utils.exceptions import UMPAException, UMPANotPermittedException
 
 class Socket(object):
     """
