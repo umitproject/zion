@@ -19,14 +19,22 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 """
+Address recognition and management module.
 """
 
-__all__ = ["IPv4"]
+import re
+
+__all__ = ['Ethernet', 'IPv4', 'IPv6', 'Unknown']
 
 def recognize(addr):
     """
     """
-    pass
+    addr_types = [IPv4, Ethernet]
+
+    for addr_type in addr_types:
+        if addr_type(addr).is_valid():
+            return addr_type
+    return Unknown
 
 class Address(object):
     """
@@ -37,17 +45,30 @@ class Address(object):
     def __init__(self, addr=None):
         """
         """
-        self.__addr = addr
+        self.addr = addr
 
-    @classmethod
-    def is_valid(cls):
+    def is_valid(self):
         """
         """
+        if re.match(self.regexp, self.addr):
+            return True
+        return False
+
+class Ethernet(Address):
+    """
+    """
+    regexp = ':'.join(["([0-9a-fA-F]{2})"] * 6) + '$'
+    broadcast = (0xff, 0xff, 0xff, 0xff, 0xff, 0xff)
+
+    def __init__(self, addr=None):
+        """
+        """
+        super(Ethernet, self).__init__(addr)
 
 class IPv4(Address):
     """
     """
-    regexp = "\.".join(["(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])"] * 4) + "$"
+    regexp = '\.'.join(["(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])"] * 4) + '$'
     broadcast = (255, 255, 255, 255)
 
     def __init__(self, addr=None):
@@ -55,8 +76,31 @@ class IPv4(Address):
         """
         super(IPv4, self).__init__(addr)
 
-if __name__ == "__main__":
+class IPv6(Address):
+    """
+    """
+    # TODO: add support to double-colon reduction and IPv4 compatible notation
+    regexp = ':'.join(["(0-9a-fA-F){4}"] * 8) + '$'
+    broadcast = (0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff)
 
-    import re
+    def __init__(self, addr=None):
+        """
+        """
+        super(IPv6, self).__init__(addr)
+
+class Unknown(Address):
+    """
+    """
+    regexp = '.*$'
+    broadcast = None
+
+    def __init__(self, addr=None):
+        """
+        """
+        super(Unknown, self).__init__(addr)
+
+
+if __name__ == '__main__':
+
     import sys
-    print re.match(IPv4.regexp, sys.argv[1])
+    print recognize(sys.argv[1])
