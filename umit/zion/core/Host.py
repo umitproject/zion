@@ -18,15 +18,30 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
+"""
+Host management module.
+"""
+
+import umit.zion.core.Address as Address
 
 class Host(object):
     """
+    Class that represent an network entity that has a least one address.
     """
-    def __init__(self, name=None, addr=None):
+    def __init__(self, addr=None):
         """
         """
-        self.__name = name
-        self.__addr = addr
+        self.set_addr(addr)
+
+    def set_addr(self, addr):
+        """
+        """
+        if addr:
+            addr_type = Address.recognize(addr)
+            if addr_type:
+                self.__addr = addr_type(addr)
+        else:
+            self.__addr = None
 
     def get_addr(self):
         """
