@@ -79,4 +79,4 @@ class TCPConnectPortScan(PortScan):
                 targets.append([t, p])
 
         probe = Probe.Probe()
-        probe.probe(targets, Probe.PROBE_TYPE_TCP_SYN)
+        return probe.probe(targets, Probe.PROBE_TYPE_TCP_SYN)

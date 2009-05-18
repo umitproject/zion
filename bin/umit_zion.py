@@ -31,14 +31,16 @@ if not hasattr(sys, 'frozen'):
         sys.path.insert(0, _source_path)
 
 import umit.zion.core.Address as Address
-from umit.zion.core.Zion import Zion, Options, create_posts_list
+import umit.zion.core.Options as Options
+from umit.zion.scan.Probe import get_addr_from_name
+from umit.zion.core.Zion import Zion
 from umit.zion.core.Host import Host
 
 if __name__ == '__main__':
 
-    zion = Zion(Options(), [])
+    zion = Zion(Options.Options(), [])
 
-    options, address = getopt.gnu_getopt(sys.argv[1:], "p:svi:a:l:d:")
+    options, address = getopt.gnu_getopt(sys.argv[1:], Options.FORMAT)
 
     for o in options:
         option, value = o
@@ -46,8 +48,9 @@ if __name__ == '__main__':
 
     for a in address:
         if Address.recognize(a) == Address.Unknown:
-            # TODO: try to resolve names when the address type is unknown.
-            pass
+            l = get_addr_from_name(a)
+            for i in l:
+                zion.append_target(Host(i))
         else:
             zion.append_target(Host(a))
 

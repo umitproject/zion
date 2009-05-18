@@ -20,55 +20,9 @@
 
 """
 """
-from umit.zion.scan.PortScan import PORTS_ALL, TCPConnectPortScan
 
-OPTIONS = {"-v": "VERBOSE",
-           "-s": "SCAN",
-           "-i": "INTERVAL",
-           "-a": "AMOUNT",
-           "-l": "LIST",
-           "-p": "PORTS",
-           "-d": "DETECT"}
-
-
-def create_posts_list(ports):
-    """
-    """
-    ports = ports.split(",")
-    rval = []
-
-    for p in ports:
-        if p.index("-"):
-            a, b = p.split("-")
-            try:
-                c = range(int(a), int(b) + 1)
-                for i in c:
-                    if i not in rval:
-                        rval.append(i)
-            except:
-                pass
-        try:
-            i = int(p)
-            if i not in rval:
-                rval.append(i)
-        except:
-            pass
-
-    return rval
-
-class Options(object):
-    """
-    """
-    def __init__(self):
-        """
-        """
-        pass
-
-    def add_option(self, option, value):
-        """
-        """
-        if option in OPTIONS.keys():
-            setattr(self, OPTIONS[option], value)
+import umit.zion.core.Options as Options
+import umit.zion.scan.PortScan as PortScan
 
 class Zion(object):
     """
@@ -97,9 +51,10 @@ class Zion(object):
     def run(self):
         """
         """
-        if hasattr(self.__option, OPTIONS["-s"]):
-            ports = PORTS_ALL
-            if hasattr(self.__option, OPTIONS["-p"]):
-                ports = create_posts_list(self.__option.PORTS)
-            scan = TCPConnectPortScan(self.__target)
-            scan.scan(ports)
+        if hasattr(self.__option, Options.OPTIONS["-s"]):
+            ports = PortScan.PORTS_DEFAULT
+            if hasattr(self.__option, Options.OPTIONS["-p"]):
+                ports = Options.create_posts_list(self.__option.PORTS)
+            scan = PortScan.TCPConnectPortScan(self.__target)
+            result = scan.scan(ports)
+            print result

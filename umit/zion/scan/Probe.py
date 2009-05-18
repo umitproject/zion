@@ -36,6 +36,19 @@ PROBE_TYPE_ICMP = 0
 PROBE_TYPE_TCP_SYN  = 1
 PROBE_TYPE_UDP = 2
 
+def get_addr_from_name(name):
+    """
+    """
+    addr = []
+    answer = socket.getaddrinfo(name, None)
+
+    for a in answer:
+        family, socktype, proto, canonname, sockaddr = a
+        address, port = sockaddr
+        addr.append(address)
+
+    return addr
+
 def get_inet_type(host):
     """
     """
@@ -101,7 +114,7 @@ class Probe(object):
     def probe(self, targets, probe_type):
         """
         """
-        rval = []
+        result = []
 
         while len(targets) + len(self.__socks) != 0:
             while len(self.__socks) < self.__limit and len(targets):
@@ -114,9 +127,9 @@ class Probe(object):
             for t, s in self.__socks:
                 if s.ans != None:
                     self.__socks.remove([t, s])
-                    rval.append([t, s.ans])
+                    result.append([t, s.ans])
 
-        return rval
+        return result
 
 
 class TCPConnectProbe(object):
