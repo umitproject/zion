@@ -21,9 +21,12 @@
 """
 """
 
+import copy
+import random
 import socket
 import select
-import umit.umpa
+
+import umit.zion.scan.Probe as Probe
 
 SCAN_MODE_RANDOM = 0
 SCAN_MODE_LINEAR = 1
@@ -31,14 +34,49 @@ SCAN_MODE_LINEAR = 1
 PORTS_ALL = range(1, 2**16)
 PORTS_DEFAULT = [21, 22, 23, 25, 53, 80, 110, 443]
 
-class TCPConnectScan(object):
+class PortScan(object):
     """
     """
-    def __init__(self, host):
+    def __init__(self, target=[]):
         """
         """
-        self.__host = host
+        self.target = target
 
-    def scan(self, ports=PORTS_DEFAULT, mode=SCAN_MODE_RANDOM)
+    def append_target(self, target):
         """
         """
+        self.target.append(target)
+
+    def scan(self, ports, mode):
+        """
+        Abstract scan method
+        """
+        pass
+
+class TCPConnectPortScan(PortScan):
+    """
+    """
+    def __init__(self, target=[]):
+        """
+        """
+        super(TCPConnectPortScan, self).__init__(target)
+
+    def scan(self, ports=PORTS_DEFAULT, mode=SCAN_MODE_RANDOM):
+        """
+        """
+        targets = []
+
+        if mode == SCAN_MODE_RANDOM:
+            random.seed()
+
+        for t in self.target:
+
+            if mode == SCAN_MODE_RANDOM:
+                ports = copy.copy(ports)
+                random.shuffle(ports)
+
+            for p in ports:
+                targets.append([t, p])
+
+        probe = Probe.Probe()
+        probe.probe(targets, Probe.PROBE_TYPE_TCP_SYN)

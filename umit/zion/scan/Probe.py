@@ -21,18 +21,48 @@
 """
 """
 
+import os
 import socket
-import select
 import umit.umpa
 
-PROBES_LIMIT = 21
-PROBE_TIMEOUT = 1 # in seconds
+from threading import Thread
+
+PROBES_LIMIT = 32
+PROBE_TIMEOUT = 0.5 # in seconds
 PROBE_MODE_RANDOM = 0
 PROBE_MODE_LINEAR = 1
 
 PROBE_TYPE_ICMP = 0
 PROBE_TYPE_TCP_SYN  = 1
 PROBE_TYPE_UDP = 2
+
+def get_inet_type(host):
+    """
+    """
+    inet_type = None
+
+    if type(host.get_addr()) == umit.zion.core.Address.IPv4:
+        inet_type = socket.AF_INET
+    elif type(host.get_addr()) == umit.zion.core.Address.IPv6:
+        inet_type = socket.AF_INET6
+
+    return inet_type
+
+class ConnectThread(Thread):
+    """
+    """
+    def __init__(self, sock, addr):
+        """
+        """
+        self.ans = None
+        self.sock = sock
+        self.addr = addr
+        Thread.__init__(self)
+
+    def run(self):
+        """
+        """
+        self.ans = self.sock.connect_ex(self.addr)
 
 class Probe(object):
     """
@@ -49,42 +79,45 @@ class Probe(object):
         """
         self.__limit = limit
 
-    def set_limit(self, timeout):
+    def set_timeout(self, timeout):
         """
         """
         self.__timeout = timeout
 
-    def fire_probe(self, host, probe_type, args, block=False):
+    def create_probe(self, target, probe_type, block=False):
         """
         """
-        inet_type = None
-        sock = None
-
-        if type(host.get_addr()) == umit.zion.core.Address.IPv4:
-            inet_type = socket.AF_INET
-        elif type(host.get_addr()) == umit.zion.core.Address.IPv6:
-            inet_type = socket.AF_INET6
-
-        if probe_type = PROBE_TYPE_TCP_SYN:
-            sock = socket.socket(inet_type, socket.SOCK_STREAM)
+        conn = None
+        
+        if probe_type == PROBE_TYPE_TCP_SYN:
+            host, args = target
+            sock = socket.socket(get_inet_type(host), socket.SOCK_STREAM)
             sock.setblocking(block)
-            sock.connect_ex((host.get_addr(), args))
+            sock.settimeout(self.__timeout)
+            conn = ConnectThread(sock, (host.get_addr().addr, args))
 
-        return sock
+        return conn
 
-    def probe(self, targets):
+    def probe(self, targets, probe_type):
         """
         """
-        while True:
+        rval = []
+
+        while len(targets) + len(self.__socks) != 0:
             while len(self.__socks) < self.__limit and len(targets):
                 target = targets.pop()
-                host, probe_type, args = target[0], target[1], target[1:]
-                sock = self.fire_probe(host, probe_type, args)
+                conn = self.create_probe(target, probe_type)
+                if conn:
+                    self.__socks.append([target, conn])
+                    conn.start()
 
-                if sock:
-                    self.__socks.append(sock)
+            for t, s in self.__socks:
+                if s.ans != None:
+                    self.__socks.remove([t, s])
+                    rval.append([t, s.ans])
 
-            #rlist, wlist, xlist = select.select(self.__socks, [], [])
+        return rval
+
 
 class TCPConnectProbe(object):
     """
