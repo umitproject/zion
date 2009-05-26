@@ -23,7 +23,7 @@
 
 import os
 import socket
-import umit.umpa
+import umpa
 
 from threading import Thread
 
