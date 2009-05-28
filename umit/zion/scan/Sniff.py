@@ -23,6 +23,9 @@
 
 import struct
 
+LINKTYPE_ETHERNET = 1
+LINKTYPE_LINUX_SLL = 113
+
 class Frame(object):
     """
     """
@@ -215,50 +218,60 @@ class TCP(Frame):
 class Packet(object):
     """
     """
-    def __init__(self, timestamp, buffer):
+    def __init__(self, timestamp, linktype, buffer):
         """
         """
         self.__timestamp = timestamp
+        self.__linktype = linktype
         self.__buffer = buffer
+        self.__packet = None
+
+    def get_packet(self):
+        """
+        """
+        return self.__packet
 
     def disassemble(self):
         """
         """
-        # FIXME: consider the use of another first frame instead Ethernet as
-        # first frame.
+        self.__packet = []
         next_type = None
-        p = []
 
         # Disassemble first frame.
-        e = Ethernet(self.__buffer)
-        p.append(e)
-        next_type = e.type
+        if self.__linktype == LINKTYPE_ETHERNET:
+            e = Ethernet(self.__buffer)
+            self.__packet.append(e)
+            next_type = e.type
+        else:
+            f = Frame(self.__buffer)
+            self.__packet.append(f)
+            return self.__packet
 
         # Disassemble second frame.
         if next_type == 0x0800:
-            i = IPv4(p[-1].payload)
-            p.append(i)
+            i = IPv4(self.__packet[-1].payload)
+            self.__packet.append(i)
             next_type = i.proto
         elif next_type == 0x86DD:
-            i = IPv6(p[-1].payload)
-            p.append(i)
+            i = IPv6(self.__packet[-1].payload)
+            self.__packet.append(i)
             next_type = i.nxt
         else:
-            f = Frame(p[-1].payload)
-            p.append(f)
-            return p
+            f = Frame(self.__packet[-1].payload)
+            self.__packet.append(f)
+            return self.__packet
 
         # Disassemble third frame.
         if next_type == 0x06:
-            t = TCP(p[-1].payload)
-            p.append(t)
+            t = TCP(self.__packet[-1].payload)
+            self.__packet.append(t)
         else:
-            f = Frame(p[-1].payload)
-            p.append(f)
-            return p
+            f = Frame(self.__packet[-1].payload)
+            self.__packet.append(f)
+            return self.__packet
 
         if len(p[-1].payload):
-            f = Frame(p[-1].payload)
-            p.append(f)
+            f = Frame(self.__packet[-1].payload)
+            self.__packet.append(f)
 
-        return p
+        return self.__packet
