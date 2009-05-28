@@ -24,8 +24,6 @@ Address recognition and management module.
 
 import re
 
-__all__ = ['Ethernet', 'IPv4', 'IPv6', 'Unknown']
-
 def recognize(addr):
     """
     """
