@@ -77,7 +77,7 @@ class Ethernet(Frame):
         s = ["+ Ethernet"]
         s.append("| (dst %s)" % self.dst)
         s.append("| (src %s)" % self.src)
-        s.append("|_(type %.4x)" % self.type)
+        s.append("|_(type 0x%.4x)" % self.type)
 
         return "\n".join(s)
 
@@ -114,16 +114,16 @@ class IPv4(Frame):
         """
         """
         s = ["+ IPv4"]
-        s.append("| (version %x)" % self.version)
-        s.append("| (hdr_len %x)" % self.hdr_len)
-        s.append("| (tos %.2x)" % self.tos)
-        s.append("| (len %.4x)" % self.len)
-        s.append("| (id %.4x)" % self.id)
-        s.append("| (flags %x)" % self.flags)
-        s.append("| (frag_offset %.4x)" % self.frag_offset)
-        s.append("| (ttl %.2x)" % self.ttl)
-        s.append("| (proto %.2x)" % self.proto)
-        s.append("| (checksum %.2x)" % self.checksum)
+        s.append("| (version 0x%x)" % self.version)
+        s.append("| (hdr_len 0x%x)" % self.hdr_len)
+        s.append("| (tos 0x%.2x)" % self.tos)
+        s.append("| (len 0x%.4x)" % self.len)
+        s.append("| (id 0x%.4x)" % self.id)
+        s.append("| (flags 0x%x)" % self.flags)
+        s.append("| (frag_offset 0x%.4x)" % self.frag_offset)
+        s.append("| (ttl 0x%.2x)" % self.ttl)
+        s.append("| (proto 0x%.2x)" % self.proto)
+        s.append("| (checksum 0x%.2x)" % self.checksum)
         s.append("| (src %s)" % self.src)
         s.append("|_(dst %s)" % self.dst)
 
@@ -156,12 +156,12 @@ class IPv6(Frame):
         """
         """
         s = ["+ IPv6"]
-        s.append("| (version %x)" % self.version)
-        s.append("| (clas %.2x)" % self.clas)
-        s.append("| (flow %.3x)" % self.flow)
-        s.append("| (plen %.4x)" % self.plen)
-        s.append("| (nxt %.2x)" % self.nxt)
-        s.append("| (hlim %.2x)" % self.hlim)
+        s.append("| (version 0x%x)" % self.version)
+        s.append("| (clas 0x%.2x)" % self.clas)
+        s.append("| (flow 0x%.3x)" % self.flow)
+        s.append("| (plen 0x%.4x)" % self.plen)
+        s.append("| (nxt 0x%.2x)" % self.nxt)
+        s.append("| (hlim 0x%.2x)" % self.hlim)
         s.append("| (src %s)" % self.src)
         s.append("|_(dst %s)" % self.dst)
 
@@ -203,12 +203,12 @@ class TCP(Frame):
         s.append("| (dstport %d)" % self.dstport)
         s.append("| (seq %d)" % self.seq)
         s.append("| (ack %d)" % self.ack)
-        s.append("| (hdr_len %x)" % self.hdr_len)
-        s.append("| (reserved %x)" % self.reserved)
-        s.append("| (flags %.2x)" % self.flags)
-        s.append("| (window_size %.4x)" % self.window_size)
-        s.append("| (checksum %.4x)" % self.checksum)
-        s.append("|_(urgent_pointer %.4x)" % self.urgent_pointer)
+        s.append("| (hdr_len 0x%x)" % self.hdr_len)
+        s.append("| (reserved 0x%x)" % self.reserved)
+        s.append("| (flags 0x%.2x)" % self.flags)
+        s.append("| (window_size 0x%.4x)" % self.window_size)
+        s.append("| (checksum 0x%.4x)" % self.checksum)
+        s.append("|_(urgent_pointer 0x%.4x)" % self.urgent_pointer)
 
         return "\n".join(s)
 
@@ -224,7 +224,7 @@ class Packet(object):
     def disassemble(self):
         """
         """
-        # TODO: consider the use of another first frame instead Ethernet as
+        # FIXME: consider the use of another first frame instead Ethernet as
         # first frame.
         next_type = None
         p = []
