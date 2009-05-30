@@ -21,8 +21,11 @@
 """
 """
 
-import struct
 import pcap
+import socket
+import struct
+
+import umpa.sniffing
 
 class Frame(object):
     """
@@ -243,7 +246,8 @@ class Packet(object):
         # There are two options to make this work right:
         #   1. Disassembly the link layer and see what the next protocol on
         #      their data fields;
-        #   2. Ignore the first `n' bytes of link layer data.
+        #   2. Ignore the first `n' bytes of link layer data. Where `n' stands
+        #      for size of link layer protocol header.
         # The second one can fail when the link layer protocol has a variable
         # header length. So, is not correct do this way. Moreover, we can be
         # sure what is the next protocol without looking at link layer header.
@@ -285,8 +289,8 @@ class Packet(object):
             return self.__packet
 
         # Disassembling third frame.
-        # For a while using IPv4 protocol and IPv6 next header fields to check
-        # what the next protocol header.
+        # For a while we are using IPv4 protocol and IPv6 next header fields to
+        # check what the next protocol header.
         if next_type == 0x06:
             t = TCP(self.__packet[-1].payload)
             self.__packet.append(t)
@@ -300,3 +304,18 @@ class Packet(object):
             self.__packet.append(f)
 
         return self.__packet
+
+class Sniff(object):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        devices = umpa.sniffing.get_available_devices()
+
+        for d in devices:
+            try:
+                addr, mask = pcap.lookupnet(d)
+                print d, socket.inet_ntoa(addr), socket.inet_ntoa(mask)
+            except:
+                pass

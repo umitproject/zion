@@ -26,7 +26,7 @@ import random
 import socket
 import select
 
-import umit.zion.scan.Probe as Probe
+import umit.zion.scan.probe as Probe
 
 SCAN_MODE_RANDOM = 0
 SCAN_MODE_LINEAR = 1

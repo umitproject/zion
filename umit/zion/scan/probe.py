@@ -24,6 +24,7 @@
 import os
 import socket
 import umpa
+import umit.zion.core.address
 
 from threading import Thread
 
@@ -54,9 +55,9 @@ def get_inet_type(host):
     """
     inet_type = None
 
-    if type(host.get_addr()) == umit.zion.core.Address.IPv4:
+    if type(host.get_addr()) == umit.zion.core.address.IPv4:
         inet_type = socket.AF_INET
-    elif type(host.get_addr()) == umit.zion.core.Address.IPv6:
+    elif type(host.get_addr()) == umit.zion.core.address.IPv6:
         inet_type = socket.AF_INET6
 
     return inet_type
