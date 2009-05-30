@@ -40,13 +40,13 @@ PROBE_TYPE_UDP = 2
 def get_addr_from_name(name):
     """
     """
-    addr = []
+    addr = set()
     answer = socket.getaddrinfo(name, None)
 
     for a in answer:
         family, socktype, proto, canonname, sockaddr = a
         address, port = sockaddr
-        addr.append(address)
+        addr.add(address)
 
     return addr
 
