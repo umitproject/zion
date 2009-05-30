@@ -45,7 +45,7 @@ def get_addr_from_name(name):
 
     for a in answer:
         family, socktype, proto, canonname, sockaddr = a
-        address, port = sockaddr
+        address = sockaddr[0]
         addr.add(address)
 
     return addr
