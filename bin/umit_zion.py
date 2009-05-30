@@ -30,11 +30,11 @@ if not hasattr(sys, 'frozen'):
         # Assuming zion is being executed from a svn checkout
         sys.path.insert(0, _source_path)
 
-import umit.zion.core.Address as Address
-import umit.zion.core.Options as Options
-from umit.zion.scan.Probe import get_addr_from_name
-from umit.zion.core.Zion import Zion
-from umit.zion.core.Host import Host
+import umit.zion.core.address as Address
+import umit.zion.core.options as Options
+from umit.zion.scan.probe import get_addr_from_name
+from umit.zion.core.zion import Zion
+from umit.zion.core.host import Host
 
 if __name__ == '__main__':
 
