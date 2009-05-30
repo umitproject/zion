@@ -22,20 +22,22 @@
 """
 
 import struct
-
-LINKTYPE_ETHERNET = 1
-LINKTYPE_LINUX_SLL = 113
+import pcap
 
 class Frame(object):
     """
     """
-    header_size = None   # Base header size for those that have variable length
+    header_size = None   # Base header size.
     header_format = None
 
-    def __init__(self, buffer):
+    def __init__(self, buffer, size=None):
         """
         """
         self._raw = buffer
+
+        if size:
+            self.header_size = size
+            self.payload = self._raw[self.header_size:]
 
     def __str__(self):
         """
@@ -237,17 +239,38 @@ class Packet(object):
         self.__packet = []
         next_type = None
 
-        # Disassemble first frame.
-        if self.__linktype == LINKTYPE_ETHERNET:
+        # Disassembling first frame.
+        # There are two options to make this work right:
+        #   1. Disassembly the link layer and see what the next protocol on
+        #      their data fields;
+        #   2. Ignore the first `n' bytes of link layer data.
+        # The second one can fail when the link layer protocol has a variable
+        # header length. So, is not correct do this way. Moreover, we can be
+        # sure what is the next protocol without looking at link layer header.
+        # For while we will assume that IP is next packet when the link layer
+        # disassembling is not implemented
+        if self.__linktype == pcap.DLT_EN10MB:
             e = Ethernet(self.__buffer)
             self.__packet.append(e)
             next_type = e.type
+        elif self.__linktype == pcap.DLT_LINUX_SLL:
+            # FIXME: the SLL protocol allow headers bigger than 16 bytes. So, a
+            # complete disassemble is needed to avoid problems.
+            f = Frame(self.__buffer, 16)
+            self.__packet.append(f)
+            # Bytes 15 and 16 of SLL says the next protocol.
+            next_type = struct.unpack('>H', f._raw[14:16])[0]
         else:
+            # If the link layer type is unknown return all payload as a base
+            # frame.
             f = Frame(self.__buffer)
             self.__packet.append(f)
             return self.__packet
 
-        # Disassemble second frame.
+        # Disassembling second frame.
+        # For a while we are using hexadecimal of Ethernet a SLL next protocol
+        # fields to identify next frames. Maybe this can be changed for keep
+        # compatibility with other link layer protocols.
         if next_type == 0x0800:
             i = IPv4(self.__packet[-1].payload)
             self.__packet.append(i)
@@ -261,7 +284,9 @@ class Packet(object):
             self.__packet.append(f)
             return self.__packet
 
-        # Disassemble third frame.
+        # Disassembling third frame.
+        # For a while using IPv4 protocol and IPv6 next header fields to check
+        # what the next protocol header.
         if next_type == 0x06:
             t = TCP(self.__packet[-1].payload)
             self.__packet.append(t)
@@ -270,7 +295,7 @@ class Packet(object):
             self.__packet.append(f)
             return self.__packet
 
-        if len(p[-1].payload):
+        if len(self.__packet[-1].payload):
             f = Frame(self.__packet[-1].payload)
             self.__packet.append(f)
 
