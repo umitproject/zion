@@ -78,7 +78,7 @@ class IPv6(Address):
     """
     """
     # TODO: add support to double-colon reduction and IPv4 compatible notation
-    regexp = ':'.join(["(0-9a-fA-F){4}"] * 8) + '$'
+    regexp = ':'.join(["([0-9a-fA-F]{1,4})"] * 8) + '$'
     bdcast = (0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff)
 
     def __init__(self, addr=None):
@@ -89,7 +89,6 @@ class IPv6(Address):
 class Unknown(object):
     """
     """
-
 
 if __name__ == '__main__':
 

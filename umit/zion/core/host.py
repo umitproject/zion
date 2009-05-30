@@ -19,42 +19,61 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 """
+Host management module.
 """
 
-import umit.zion.core.Options as Options
-import umit.zion.scan.PortScan as PortScan
+import umit.zion.core.address as Address
 
-class Zion(object):
+PROTOCOL_TCP = 0
+PROTOCOL_UDP = 1
+PROTOCOL_ICMP = 2
+
+class Port(object):
     """
     """
-    def __init__(self, option, target=[]):
+    def __init__(self, number, protocol, status, service=None):
         """
         """
-        self.__option = option
-        self.__target = target
+        self.number = number
+        self.protocol = protocol
+        self.status = status
+        self.service = service
 
-    def get_option_object(self):
+class Host(object):
+    """
+    Class that represent an network entity that has a least one address.
+    """
+    def __init__(self, addr=None):
         """
         """
-        return self.__option
+        self.set_addr(addr)
+        self.__ports = {}
 
-    def append_target(self, target):
+    def add_port(self, port):
         """
         """
-        self.__target.append(target)
+        self.__ports[port.number] = port
 
-    def get_target_list(self):
+    def set_addr(self, addr):
         """
         """
-        return self.__target
+        if addr:
+            addr_type = Address.recognize(addr)
+            if addr_type:
+                self.__addr = addr_type(addr)
+        else:
+            self.__addr = None
 
-    def run(self):
+    def get_addr(self):
         """
         """
-        if hasattr(self.__option, Options.OPTIONS["-s"]):
-            ports = PortScan.PORTS_DEFAULT
-            if hasattr(self.__option, Options.OPTIONS["-p"]):
-                ports = Options.create_posts_list(self.__option.PORTS)
-            scan = PortScan.TCPConnectPortScan(self.__target)
-            result = scan.scan(ports)
-            print result
+        return self.__addr
+
+    def __str__(self):
+        """
+        """
+        #
+
+if __name__ == "__main__":
+
+    print Host(addr=(127,0,0,1)).get_addr()

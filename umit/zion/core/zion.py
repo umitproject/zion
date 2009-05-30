@@ -19,36 +19,45 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 """
-Host management module.
 """
 
-import umit.zion.core.Address as Address
+from umit.zion.core import options, host
+from umit.zion.scan import portscan
 
-class Host(object):
+class Zion(object):
     """
-    Class that represent an network entity that has a least one address.
     """
-    def __init__(self, addr=None):
+    def __init__(self, option, target=[]):
         """
         """
-        self.set_addr(addr)
+        self.__option = option
+        self.__target = target
 
-    def set_addr(self, addr):
+    def get_option_object(self):
         """
         """
-        if addr:
-            addr_type = Address.recognize(addr)
-            if addr_type:
-                self.__addr = addr_type(addr)
-        else:
-            self.__addr = None
+        return self.__option
 
-    def get_addr(self):
+    def append_target(self, target):
         """
         """
-        return self.__addr
+        self.__target.append(target)
 
+    def get_target_list(self):
+        """
+        """
+        return self.__target
 
-if __name__ == "__main__":
+    def run(self):
+        """
+        """
+        if hasattr(self.__option, options.OPTIONS["-s"]):
+            ports = portscan.PORTS_DEFAULT
+            if hasattr(self.__option, options.OPTIONS["-p"]):
+                ports = options.create_posts_list(self.__option.PORTS)
 
-    print Host(addr=(127,0,0,1)).get_addr()
+            scan = portscan.TCPConnectPortScan(self.__target)
+            result = scan.scan(ports)
+
+            for (target, port), status in result:
+                target.add_port(host.Port(port, host.PROTOCOL_TCP, status))
