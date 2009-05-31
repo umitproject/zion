@@ -30,28 +30,27 @@ if not hasattr(sys, 'frozen'):
         # Assuming zion is being executed from a svn checkout
         sys.path.insert(0, _source_path)
 
-import umit.zion.core.address as Address
-import umit.zion.core.options as Options
-from umit.zion.scan.probe import get_addr_from_name
-from umit.zion.core.zion import Zion
-from umit.zion.core.host import Host
+from umit.zion.scan import probe
+from umit.zion.core import address, options, zion, host
 
 if __name__ == '__main__':
 
-    zion = Zion(Options.Options(), [])
+    z = zion.Zion(options.Options(), [])
 
-    options, address = getopt.gnu_getopt(sys.argv[1:], Options.FORMAT)
+    opts, addrs = getopt.gnu_getopt(sys.argv[1:],
+            options.OPTIONS_SHORT,
+            options.OPTIONS_LONG)
 
-    for o in options:
-        option, value = o
-        zion.get_option_object().add_option(option, value)
+    for o in opts:
+        opt, value = o
+        z.get_option_object().add(opt, value)
 
-    for a in address:
-        if Address.recognize(a) == Address.Unknown:
-            l = get_addr_from_name(a)
+    for a in addrs:
+        if address.recognize(a) == address.Unknown:
+            l = probe.get_addr_from_name(a)
             for i in l:
-                zion.append_target(Host(i))
+                z.append_target(host.Host(i, a))
         else:
-            zion.append_target(Host(a))
+            z.append_target(host.Host(a))
 
-    zion.run()
+    z.run()
