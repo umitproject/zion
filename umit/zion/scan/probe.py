@@ -29,7 +29,7 @@ import umit.zion.core.address
 from threading import Thread
 
 PROBES_LIMIT = 32
-PROBE_TIMEOUT = 1.0 # in seconds
+PROBE_TIMEOUT = 3 # in seconds
 PROBE_MODE_RANDOM = 0
 PROBE_MODE_LINEAR = 1
 
