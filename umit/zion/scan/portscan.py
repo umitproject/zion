@@ -26,7 +26,7 @@ import random
 import socket
 import select
 
-import umit.zion.scan.probe as Probe
+from umit.zion.scan import probe
 
 SCAN_MODE_RANDOM = 0
 SCAN_MODE_LINEAR = 1
@@ -78,5 +78,5 @@ class TCPConnectPortScan(PortScan):
             for p in ports:
                 targets.append([t, p])
 
-        probe = Probe.Probe()
-        return probe.probe(targets, Probe.PROBE_TYPE_TCP_SYN)
+        p = probe.Probe()
+        return p.probe(targets, probe.PROBE_TYPE_TCP_SYN)
