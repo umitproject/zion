@@ -26,7 +26,7 @@ import getopt
 if not hasattr(sys, 'frozen'):
     _source_path = os.path.abspath(
             os.path.join(os.path.dirname(__file__), os.path.pardir))
-    if os.path.exists(os.path.join(_source_path, 'bin/umit_zion.py')):
+    if os.path.exists(os.path.join(_source_path, 'bin/zion.py')):
         # Assuming zion is being executed from a svn checkout
         sys.path.insert(0, _source_path)
 
