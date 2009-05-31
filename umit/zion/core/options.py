@@ -25,22 +25,34 @@ from umit.zion.scan import portscan
 
 OPTION_SCAN = 0
 OPTION_CAPTURE = 1
-OPTION_VERBOSE = 2
-OPTION_PORTS = 3
-OPTION_DETECT = 4
+OPTION_CAPTURE_AMOUNT = 2
+OPTION_CAPTURE_FILTER = 3
+OPTION_CAPTURE_FIELDS = 4
+OPTION_VERBOSE = 5
+OPTION_PORTS = 6
+OPTION_DETECT = 7
 
-OPTIONS = {'-v':         OPTION_VERBOSE,
-           '-c':         OPTION_CAPTURE,
-           '--capture':  OPTION_CAPTURE,
-           '-s':         OPTION_SCAN,
-           '--scan':     OPTION_SCAN,
-           '-p':         OPTION_PORTS,
-           '--ports':    OPTION_PORTS,
-           '-d':         OPTION_DETECT,
-           '--detect':   OPTION_DETECT}
+OPTIONS = {'-v':                OPTION_VERBOSE,
+           '-c':                OPTION_CAPTURE,
+           '--capture':         OPTION_CAPTURE,
+           '--capture-amount':  OPTION_CAPTURE_AMOUNT,
+           '--capture-filter':  OPTION_CAPTURE_FILTER,
+           '--capture-fields':  OPTION_CAPTURE_FIELDS,
+           '-s':                OPTION_SCAN,
+           '--scan':            OPTION_SCAN,
+           '-p':                OPTION_PORTS,
+           '--ports':           OPTION_PORTS,
+           '-d':                OPTION_DETECT,
+           '--detect':          OPTION_DETECT}
 
 OPTIONS_SHORT = 'p:l:d:svc:'
-OPTIONS_LONG = ['capture=', 'scan', 'ports=', 'detect=']
+OPTIONS_LONG = ['capture=',
+                'capture-amount=',
+                'capture-filter=',
+                'capture-fields=',
+                'scan',
+                'ports=',
+                'detect=']
 
 def parse_posts_list(ports):
     """
