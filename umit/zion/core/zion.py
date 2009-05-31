@@ -22,7 +22,7 @@
 """
 
 from umit.zion.core import options, host
-from umit.zion.scan import portscan
+from umit.zion.scan import sniff, portscan
 
 class Zion(object):
     """
@@ -51,13 +51,58 @@ class Zion(object):
     def run(self):
         """
         """
-        if hasattr(self.__option, options.OPTIONS["-s"]):
-            ports = portscan.PORTS_DEFAULT
-            if hasattr(self.__option, options.OPTIONS["-p"]):
-                ports = options.create_posts_list(self.__option.PORTS)
+        if self.__option.has(options.OPTION_SCAN):
+
+            print
+            print 'TCP SYN port scan results'
+            print '-------------------------'
+
+            if self.__option.has(options.OPTION_PORTS):
+                ports = self.__option.get(options.OPTION_PORTS)
+                ports = options.parse_posts_list(ports)
+            else:
+                ports = portscan.PORTS_DEFAULT
 
             scan = portscan.TCPConnectPortScan(self.__target)
             result = scan.scan(ports)
 
             for (target, port), status in result:
                 target.add_port(host.Port(port, host.PROTOCOL_TCP, status))
+
+            for target in self.__target:
+                print target
+
+        if self.__option.has(options.OPTION_CAPTURE):
+
+            print
+            print 'Capturing packets'
+            print '-----------------'
+
+            s = sniff.Sniff()
+
+            try:
+                dev = self.__option.get(options.OPTION_CAPTURE)
+
+                if dev not in s.devices.keys():
+                    print 'Cannot access device: %s.' % dev
+
+                if self.__option.has(options.OPTION_CAPTURE_AMOUNT):
+                    amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
+                    s.amount = int(amount)
+
+                if self.__option.has(options.OPTION_CAPTURE_FILTER):
+                    s.filter = self.__option.get(options.OPTION_CAPTURE_FILTER)
+
+                if self.__option.has(options.OPTION_CAPTURE_FIELDS):
+                    fields = self.__option.get(options.OPTION_CAPTURE_FIELDS)
+                    s.fields = fields.split(',')
+
+                s.start(dev)
+            except Exception, e:
+                print 'Error', e
+            except KeyboardInterrupt:
+                pass
+
+            print '\nTotal of %d packets captured.' % len(s.packets)
+
+        print
