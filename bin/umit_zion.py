@@ -37,9 +37,13 @@ if __name__ == '__main__':
 
     z = zion.Zion(options.Options(), [])
 
-    opts, addrs = getopt.gnu_getopt(sys.argv[1:],
-            options.OPTIONS_SHORT,
-            options.OPTIONS_LONG)
+    try:
+        opts, addrs = getopt.gnu_getopt(sys.argv[1:],
+                options.OPTIONS_SHORT,
+                options.OPTIONS_LONG)
+    except getopt.GetoptError, e:
+        print 'Error: %s.' % e
+        sys.exit(0)
 
     for o in opts:
         opt, value = o
