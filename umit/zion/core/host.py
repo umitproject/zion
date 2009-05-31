@@ -22,7 +22,19 @@
 Host management module.
 """
 
-import umit.zion.core.address as Address
+from umit.zion.core import address
+
+HOST_STATUS_UP = 'up'
+HOST_STATUS_DOWN = 'down'
+HOST_STATUS_UNREACHABLE = 'unreachable'
+
+PORT_STATE_OPEN = 0
+PORT_STATE_CLOSED = 111
+PORT_STATE_FILTERED = 11
+
+PORT_STATE_STR = {PORT_STATE_OPEN: 'open',
+                  PORT_STATE_FILTERED: 'filtered',
+                  PORT_STATE_CLOSED: 'closed'}
 
 PROTOCOL_TCP = 0
 PROTOCOL_UDP = 1
@@ -43,22 +55,35 @@ class Host(object):
     """
     Class that represent an network entity that has a least one address.
     """
-    def __init__(self, addr=None):
+    def __init__(self, addr=None, name=None):
         """
         """
         self.set_addr(addr)
+        self.__name = name
         self.__ports = {}
+        self.__status = HOST_STATUS_DOWN
+
+    def set_status(self, status):
+        """
+        """
+        self.__status = status
 
     def add_port(self, port):
         """
         """
         self.__ports[port.number] = port
 
+        if port.status in [PORT_STATE_OPEN, PORT_STATE_CLOSED]:
+            self.set_status(HOST_STATUS_UP)
+        elif port.status == HOST_STATUS_UNREACHABLE:
+            print port.number, port.status
+            self.set_status(HOST_STATUS_UNREACHABLE)
+
     def set_addr(self, addr):
         """
         """
         if addr:
-            addr_type = Address.recognize(addr)
+            addr_type = address.recognize(addr)
             if addr_type:
                 self.__addr = addr_type(addr)
         else:
@@ -72,7 +97,21 @@ class Host(object):
     def __str__(self):
         """
         """
-        #
+        s = [""]
+
+        if self.__name:
+            s.append('%s' % self.__name)
+
+        s.append('%s (%s)' % (self.get_addr().addr, self.__status))
+
+        if self.__status == HOST_STATUS_UP:
+            ports = self.__ports.keys()
+            ports.sort()
+            for p in ports:
+                port = self.__ports[p]
+                s.append(' %d %s' % (port.number, PORT_STATE_STR[port.status]))
+
+        return '\n'.join(s)
 
 if __name__ == "__main__":
 
