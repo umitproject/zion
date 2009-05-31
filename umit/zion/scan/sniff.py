@@ -252,6 +252,12 @@ class TCP(Frame):
 
         return "\n".join(s)
 
+FRAME_TYPES = {'sll': SLL,
+               'ether': Ethernet,
+               'ipv4': IPv4,
+               'ipv6': IPv6,
+               'tcp': TCP}
+
 class Packet(object):
     """
     """
@@ -281,10 +287,12 @@ class Packet(object):
 
         # Disassembling first frame.
         # There are two options to make this work right:
+        #
         #   1. Disassembly the link layer and see what the next protocol on
         #      their data fields;
         #   2. Ignore the first `n' bytes of link layer data. Where `n' stands
         #      for size of link layer protocol header.
+        #
         # The second one can fail when the link layer protocol has a variable
         # header length. So, is not correct do this way. Moreover, we can be
         # sure what is the next protocol without looking at link layer header.
@@ -345,15 +353,10 @@ class Packet(object):
         """
         proto, attr = field.split('.')
 
-        for p in self.__packet:
-            if proto == 'ether' and type(p) == Ethernet and hasattr(p, attr):
-                return getattr(p, attr)
-            elif proto == 'ipv4' and type(p) == IPv4 and hasattr(p, attr):
-                return getattr(p, attr)
-            elif proto == 'ipv6' and type(p) == IPv6 and hasattr(p, attr):
-                return getattr(p, attr)
-            elif proto == 'tcp' and type(p) == TCP and hasattr(p, attr):
-                return getattr(p, attr)
+        if proto in FRAME_TYPES.keys():
+            for p in self.__packet:
+                if hasattr(p, attr) and type(p) == FRAME_TYPES[proto]:
+                    return getattr(p, attr)
 
         return None
 
