@@ -223,7 +223,7 @@ class TCP(Frame):
 class Packet(object):
     """
     """
-    def __init__(self, timestamp, linktype, buffer):
+    def __init__(self, timestamp, buffer, linktype):
         """
         """
         self.__timestamp = timestamp
@@ -305,17 +305,79 @@ class Packet(object):
 
         return self.__packet
 
+    def get_field(self, field):
+        """
+        """
+        proto, attr = field.split('.')
+
+        for p in self.__packet:
+            if proto == 'ether' and type(p) == Ethernet and hasattr(p, attr):
+                return getattr(p, attr)
+            elif proto == 'ipv4' and type(p) == IPv4 and hasattr(p, attr):
+                return getattr(p, attr)
+            elif proto == 'ipv6' and type(p) == IPv6 and hasattr(p, attr):
+                return getattr(p, attr)
+            elif proto == 'tcp' and type(p) == TCP and hasattr(p, attr):
+                return getattr(p, attr)
+
+        return None
+
+    def __str__(self):
+        """
+        """
+        s = [str(self.__timestamp)]
+
+        for p in self.__packet:
+            s.append(p.__str__())
+
+        return '\n'.join(s)
+
+class Device(object):
+    """
+    """
+    def __init__(self, name):
+        """
+        """
+        self.name = name
+        try:
+            self.naddr, self.mask = pcap.lookupnet(self.name)
+        except:
+            self.naddr, self.mask = None, None
+
 class Sniff(object):
     """
     """
     def __init__(self):
         """
         """
-        devices = umpa.sniffing.get_available_devices()
+        self.amount = None
+        self.filter = ''
+        self.fields = []
+        self.packets = []
+        self.devices = {}
+        for d in umpa.sniffing.get_available_devices():
+            self.devices[d] = Device(d)
 
-        for d in devices:
-            try:
-                addr, mask = pcap.lookupnet(d)
-                print d, socket.inet_ntoa(addr), socket.inet_ntoa(mask)
-            except:
-                pass
+    def start(self, device):
+        """
+        """
+        capture = pcap.pcap(device)
+        capture.setfilter(self.filter)
+        number = 0
+
+        for timestamp, packet in capture:
+            p = Packet(timestamp, packet, capture.datalink())
+            p.disassemble()
+            self.packets.append(p)
+            number += 1
+
+            if len(self.fields):
+                s = []
+                for f in self.fields:
+                    s.append(str(p.get_field(f)))
+                print '[%d]' % number, ', '.join(s)
+            else:
+                print '[%d]' % number, p
+
+            if number == self.amount:
+                break
