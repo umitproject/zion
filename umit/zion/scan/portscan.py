@@ -32,7 +32,7 @@ SCAN_MODE_RANDOM = 0
 SCAN_MODE_LINEAR = 1
 
 PORTS_ALL = range(1, 2**16)
-PORTS_DEFAULT = [21, 22, 23, 25, 53, 80, 110, 443]
+PORTS_DEFAULT = [21, 22, 23, 25, 53, 80, 110, 113, 135, 443]
 
 class PortScan(object):
     """
