@@ -33,31 +33,63 @@ class Frame(object):
     header_size = None   # Base header size.
     header_format = None
 
-    def __init__(self, buffer, size=None):
+    def __init__(self, buffer):
         """
         """
         self._raw = buffer
 
-        if size:
-            self.header_size = size
-            self.payload = self._raw[self.header_size:]
-
     def __str__(self):
         """
         """
-        s = ["+ Frame"]
+        s = ['+ Frame']
         raw = struct.unpack('B' * len(self._raw), self._raw)
         col = 16
 
         for i in range(len(raw) / col):
-            s.append("| " + "%.2x " * col % (raw[i * col: (i + 1) * col]))
+            s.append('| ' + '%.2x ' * col % (raw[i * col: (i + 1) * col]))
 
         rest = len(raw) % col
         i = len(raw) / col
         if rest:
-            s.append("| " + "%.2x " * rest % (raw[i * col: i * col + rest]))
+            s.append('| ' + '%.2x ' * rest % (raw[i * col: i * col + rest]))
 
-        s[-1] = s[-1].replace("| ", "|_")
+        s[-1] = s[-1].replace('| ', '|_')
+
+        return '\n'.join(s)
+
+class SLL(Frame):
+    """
+    """
+    # FIXME: seems that SLL protocol allow headers bigger than 16 bytes. So, a
+    # complete disassemble is needed to avoid problems.
+    header_size = 16
+    header_format = '>HHH8BH'
+
+    def __init__(self, buffer):
+        """
+        """
+        super(SLL, self).__init__(buffer)
+        self.payload = self._raw[self.header_size:]
+        self._fields = struct.unpack(self.header_format,
+                self._raw[:self.header_size])
+
+        # Assuming structure found in: `libpcap/pcap/sll.h,v 1.3'
+
+        self.pkttype = self._fields[0]
+        self.hatype = self._fields[1]
+        self.halen = self._fields[2]
+        self.addr = ':'.join(['%.2x'] * 8) % (self._fields[3:11])
+        self.protocol = self._fields[11]
+
+    def __str__(self):
+        """
+        """
+        s = ['+ SLL']
+        s.append('| (pkttype 0x%.4x)' % self.pkttype)
+        s.append('| (hatype 0x%.4x)' % self.hatype)
+        s.append('| (halen 0x%.4x)' % self.halen)
+        s.append('| (addr %s)' % self.addr)
+        s.append('|_(protocol 0x%.4x)' % self.protocol)
 
         return "\n".join(s)
 
@@ -75,19 +107,19 @@ class Ethernet(Frame):
         self._fields = struct.unpack(self.header_format,
                 self._raw[:self.header_size])
 
-        self.dst = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (self._fields[0:6])
-        self.src = "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" % (self._fields[6:12])
+        self.dst = ':'.join(['%.2x'] * 6) % (self._fields[0:6])
+        self.src = ':'.join(['%.2x'] * 6) % (self._fields[6:12])
         self.type = self._fields[12]
 
     def __str__(self):
         """
         """
-        s = ["+ Ethernet"]
-        s.append("| (dst %s)" % self.dst)
-        s.append("| (src %s)" % self.src)
-        s.append("|_(type 0x%.4x)" % self.type)
+        s = ['+ Ethernet']
+        s.append('| (dst %s)' % self.dst)
+        s.append('| (src %s)' % self.src)
+        s.append('|_(type 0x%.4x)' % self.type)
 
-        return "\n".join(s)
+        return '\n'.join(s)
 
 class IPv4(Frame):
     """
@@ -112,8 +144,8 @@ class IPv4(Frame):
         self.ttl = self._fields[5]
         self.proto = self._fields[6]
         self.checksum = self._fields[7]
-        self.src = "%d.%d.%d.%d" % (self._fields[8:12])
-        self.dst = "%d.%d.%d.%d" % (self._fields[12:16])
+        self.src = '%d.%d.%d.%d' % (self._fields[8:12])
+        self.dst = '%d.%d.%d.%d' % (self._fields[12:16])
 
         # FIXME: verify header size
         self.payload = self._raw[self.header_size:]
@@ -121,21 +153,21 @@ class IPv4(Frame):
     def __str__(self):
         """
         """
-        s = ["+ IPv4"]
-        s.append("| (version 0x%x)" % self.version)
-        s.append("| (hdr_len 0x%x)" % self.hdr_len)
-        s.append("| (tos 0x%.2x)" % self.tos)
-        s.append("| (len 0x%.4x)" % self.len)
-        s.append("| (id 0x%.4x)" % self.id)
-        s.append("| (flags 0x%x)" % self.flags)
-        s.append("| (frag_offset 0x%.4x)" % self.frag_offset)
-        s.append("| (ttl 0x%.2x)" % self.ttl)
-        s.append("| (proto 0x%.2x)" % self.proto)
-        s.append("| (checksum 0x%.2x)" % self.checksum)
-        s.append("| (src %s)" % self.src)
-        s.append("|_(dst %s)" % self.dst)
+        s = ['+ IPv4']
+        s.append('| (version 0x%x)' % self.version)
+        s.append('| (hdr_len 0x%x)' % self.hdr_len)
+        s.append('| (tos 0x%.2x)' % self.tos)
+        s.append('| (len 0x%.4x)' % self.len)
+        s.append('| (id 0x%.4x)' % self.id)
+        s.append('| (flags 0x%x)' % self.flags)
+        s.append('| (frag_offset 0x%.4x)' % self.frag_offset)
+        s.append('| (ttl 0x%.2x)' % self.ttl)
+        s.append('| (proto 0x%.2x)' % self.proto)
+        s.append('| (checksum 0x%.2x)' % self.checksum)
+        s.append('| (src %s)' % self.src)
+        s.append('|_(dst %s)' % self.dst)
 
-        return "\n".join(s)
+        return '\n'.join(s)
 
 class IPv6(Frame):
     """
@@ -157,23 +189,23 @@ class IPv6(Frame):
         self.plen = self._fields[1]
         self.nxt = self._fields[2]
         self.hlim = self._fields[3]
-        self.dst = ":".join(["%.4x"] * 8) % (self._fields[4:12])
-        self.src = ":".join(["%.4x"] * 8) % (self._fields[12:20])
+        self.dst = ':'.join(["%.4x"] * 8) % (self._fields[4:12])
+        self.src = ':'.join(["%.4x"] * 8) % (self._fields[12:20])
 
     def __str__(self):
         """
         """
-        s = ["+ IPv6"]
-        s.append("| (version 0x%x)" % self.version)
-        s.append("| (clas 0x%.2x)" % self.clas)
-        s.append("| (flow 0x%.3x)" % self.flow)
-        s.append("| (plen 0x%.4x)" % self.plen)
-        s.append("| (nxt 0x%.2x)" % self.nxt)
-        s.append("| (hlim 0x%.2x)" % self.hlim)
-        s.append("| (src %s)" % self.src)
-        s.append("|_(dst %s)" % self.dst)
+        s = ['+ IPv6']
+        s.append('| (version 0x%x)' % self.version)
+        s.append('| (clas 0x%.2x)' % self.clas)
+        s.append('| (flow 0x%.3x)' % self.flow)
+        s.append('| (plen 0x%.4x)' % self.plen)
+        s.append('| (nxt 0x%.2x)' % self.nxt)
+        s.append('| (hlim 0x%.2x)' % self.hlim)
+        s.append('| (src %s)' % self.src)
+        s.append('|_(dst %s)' % self.dst)
 
-        return "\n".join(s)
+        return '\n'.join(s)
 
 class TCP(Frame):
     """
@@ -205,18 +237,18 @@ class TCP(Frame):
     def __str__(self):
         """
         """
-        s = ["+ TCP"]
+        s = ['+ TCP']
 
-        s.append("| (srcport %d)" % self.srcport)
-        s.append("| (dstport %d)" % self.dstport)
-        s.append("| (seq %d)" % self.seq)
-        s.append("| (ack %d)" % self.ack)
-        s.append("| (hdr_len 0x%x)" % self.hdr_len)
-        s.append("| (reserved 0x%x)" % self.reserved)
-        s.append("| (flags 0x%.2x)" % self.flags)
-        s.append("| (window_size 0x%.4x)" % self.window_size)
-        s.append("| (checksum 0x%.4x)" % self.checksum)
-        s.append("|_(urgent_pointer 0x%.4x)" % self.urgent_pointer)
+        s.append('| (srcport %d)' % self.srcport)
+        s.append('| (dstport %d)' % self.dstport)
+        s.append('| (seq %d)' % self.seq)
+        s.append('| (ack %d)' % self.ack)
+        s.append('| (hdr_len 0x%x)' % self.hdr_len)
+        s.append('| (reserved 0x%x)' % self.reserved)
+        s.append('| (flags 0x%.2x)' % self.flags)
+        s.append('| (window_size 0x%.4x)' % self.window_size)
+        s.append('| (checksum 0x%.4x)' % self.checksum)
+        s.append('|_(urgent_pointer 0x%.4x)' % self.urgent_pointer)
 
         return "\n".join(s)
 
@@ -230,6 +262,11 @@ class Packet(object):
         self.__linktype = linktype
         self.__buffer = buffer
         self.__packet = None
+
+    def get_timestamp(self):
+        """
+        """
+        return self.__timestamp
 
     def get_packet(self):
         """
@@ -258,12 +295,10 @@ class Packet(object):
             self.__packet.append(e)
             next_type = e.type
         elif self.__linktype == pcap.DLT_LINUX_SLL:
-            # FIXME: the SLL protocol allow headers bigger than 16 bytes. So, a
-            # complete disassemble is needed to avoid problems.
-            f = Frame(self.__buffer, 16)
-            self.__packet.append(f)
+            s = SLL(self.__buffer)
+            self.__packet.append(s)
             # Bytes 15 and 16 of SLL says the next protocol.
-            next_type = struct.unpack('>H', f._raw[14:16])[0]
+            next_type = s.protocol
         else:
             # If the link layer type is unknown return all payload as a base
             # frame.
@@ -325,7 +360,7 @@ class Packet(object):
     def __str__(self):
         """
         """
-        s = [str(self.__timestamp)]
+        s = ['timestamp %f' % self.__timestamp]
 
         for p in self.__packet:
             s.append(p.__str__())
@@ -375,9 +410,9 @@ class Sniff(object):
                 s = []
                 for f in self.fields:
                     s.append(str(p.get_field(f)))
-                print '[%d]' % number, ', '.join(s)
+                print '(timestamp %f)' % p.get_timestamp(),', '.join(s)
             else:
-                print '[%d]' % number, p
+                print '\n', p
 
             if number == self.amount:
                 break
