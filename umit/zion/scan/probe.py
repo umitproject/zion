@@ -23,13 +23,12 @@
 
 import os
 import socket
-import umpa
 import umit.zion.core.address
 
 from threading import Thread
 
 PROBES_LIMIT = 32
-PROBE_TIMEOUT = 3 # in seconds
+PROBE_TIMEOUT = 7 # in seconds
 PROBE_MODE_RANDOM = 0
 PROBE_MODE_LINEAR = 1
 
@@ -41,12 +40,15 @@ def get_addr_from_name(name):
     """
     """
     addr = set()
-    answer = socket.getaddrinfo(name, None)
+    try:
+        answer = socket.getaddrinfo(name, None)
 
-    for a in answer:
-        family, socktype, proto, canonname, sockaddr = a
-        address = sockaddr[0]
-        addr.add(address)
+        for a in answer:
+            family, socktype, proto, canonname, sockaddr = a
+            address = sockaddr[0]
+            addr.add(address)
+    except:
+        pass
 
     return addr
 
@@ -131,19 +133,3 @@ class Probe(object):
                     result.append([t, s.ans])
 
         return result
-
-
-class TCPConnectProbe(object):
-    """
-    """
-    DEFAULT_PORT = 80
-
-    def __init__(self, hosts):
-        """
-        """
-        self.__hosts = hosts
-
-    def probe(self, mode=PROBE_MODE_RANDOM):
-        """
-        """
-        pass
