@@ -28,10 +28,14 @@ OPTION_CAPTURE = 1
 OPTION_CAPTURE_AMOUNT = 2
 OPTION_CAPTURE_FILTER = 3
 OPTION_CAPTURE_FIELDS = 4
-OPTION_VERBOSE = 5
-OPTION_PORTS = 6
-OPTION_FORGE = 7
+OPTION_CAPTURE_SAVE = 5
+OPTION_VERBOSE = 6
+OPTION_PORTS = 7
 OPTION_DETECT = 8
+OPTION_GET = 9
+OPTION_GET_AMOUNT = 10
+
+GET_MODE_SYN = 'syn'
 
 OPTIONS = {'-v':                OPTION_VERBOSE,
            '-c':                OPTION_CAPTURE,
@@ -39,23 +43,27 @@ OPTIONS = {'-v':                OPTION_VERBOSE,
            '--capture-amount':  OPTION_CAPTURE_AMOUNT,
            '--capture-filter':  OPTION_CAPTURE_FILTER,
            '--capture-fields':  OPTION_CAPTURE_FIELDS,
+           '--capture-save':    OPTION_CAPTURE_SAVE,
            '-s':                OPTION_SCAN,
            '--scan':            OPTION_SCAN,
            '-p':                OPTION_PORTS,
            '--scan-ports':      OPTION_PORTS,
-           '-f':                OPTION_FORGE,
-           '--forge':           OPTION_FORGE,
+           '-g':                OPTION_GET,
+           '--get':             OPTION_GET,
+           '--get-amount':      OPTION_GET_AMOUNT,
            '-d':                OPTION_DETECT,
            '--detect':          OPTION_DETECT}
 
-OPTIONS_SHORT = 'p:l:d:svc:'
+OPTIONS_SHORT = 'c:d:p:g:sv'
 OPTIONS_LONG = ['capture=',
                 'capture-amount=',
                 'capture-filter=',
                 'capture-fields=',
+                'capture-save=',
                 'scan',
+                'get=',
+                'get-amount=',
                 'scan-ports=',
-                'forge',
                 'detect=']
 
 def parse_posts_list(ports):

@@ -94,10 +94,20 @@ class Host(object):
         """
         return self.__addr
 
+    def get_open_ports(self):
+        """
+        """
+        result = []
+        for port in self.__ports.values():
+            if port.status == PORT_STATE_OPEN:
+                result.append(port.number)
+
+        return result
+
     def __str__(self):
         """
         """
-        s = [""]
+        s = ['']
 
         if self.__name:
             s.append('%s' % self.__name)
