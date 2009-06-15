@@ -21,8 +21,12 @@
 """
 """
 
+import random
+
 from umit.zion.core import options, host
 from umit.zion.scan import sniff, portscan, forge
+
+FORGE_FILTER = 'src host %s and src port %s and dst host %s and dst port %s'
 
 class Zion(object):
     """
@@ -92,28 +96,61 @@ class Zion(object):
         except KeyboardInterrupt:
             pass
 
-    def do_get(self):
+    def do_forge(self):
         """
         """
-        mode = self.__option.get(options.OPTION_GET)
+        mode = self.__option.get(options.OPTION_FORGE)
+        addr = self.__option.get(options.OPTION_FORGE_ADDR)
+        port = random.randint(1024, 65535)
 
-        if mode == options.GET_MODE_SYN:
+        s = sniff.Sniff()
+
+        if mode == options.FORGE_MODE_SYN:
             self.do_scan()
 
-            for target in self.__target:
-                ports = target.get_open_ports()
-                packet = forge.Packet(options.GET_MODE_SYN,
-                        target.get_addr(),
-                        (60000, ports[0]))
-                packet.send()
+            for t in self.__target:
+
+                ports = t.get_open_ports()
+
+                if len(ports):
+                    s.amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
+                    s.amount = int(s.amount)
+                    s.fields = ['tcp.seq']
+                    s.filter = FORGE_FILTER % (t.get_addr().addr, ports[0],
+                            addr, port)
+                    packet = forge.Packet(options.FORGE_MODE_SYN,
+                            addr,
+                            t.get_addr(),
+                            (port, ports[0]))
+
+                    print
+                    print s.filter
+                    print
+
+                    try:
+                        packet.start()
+                        s.start(self.__option.get(options.OPTION_CAPTURE))
+                        packet.stop()
+                    except Exception, e:
+                        print 'Error:', e
+                    except KeyboardInterrupt:
+                        packet.stop()
 
         else:
-            print 'Unimplemented get mode %s.' % mode
+            print 'Unimplemented forge mode %s.' % mode
 
     def run(self):
         """
         """
-        if self.__option.has(options.OPTION_SCAN):
+        if self.__option.has(options.OPTION_FORGE):
+
+            print
+            print 'Getting packets'
+            print '---------------'
+
+            self.do_forge()
+
+        elif self.__option.has(options.OPTION_SCAN):
 
             print
             print 'TCP SYN port scan results'
@@ -121,20 +158,10 @@ class Zion(object):
 
             self.do_scan()
 
-        if self.__option.has(options.OPTION_CAPTURE):
+        elif self.__option.has(options.OPTION_CAPTURE):
 
             print
             print 'Capturing packets'
             print '-----------------'
 
             self.do_capture()
-
-        if self.__option.has(options.OPTION_GET):
-
-            print
-            print 'Getting packets'
-            print '---------------'
-
-            self.do_get()
-
-        print
