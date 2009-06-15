@@ -21,21 +21,25 @@
 """
 """
 
+import time
 import socket
 import umpa.protocols
 
-import umit.zion.scan.probe
 import umit.zion.core.address
 
 from umit.zion.core import options
+from threading import Thread
 
-class Packet(object):
+class Packet(Thread):
     """
     """
-    def __init__(self, ptype, addr, args=[]):
+    def __init__(self, ptype, saddr, daddr, args=[]):
         """
         """
-        self._addr = addr
+        Thread.__init__(self)
+        self.flag = False
+        self.interval = 0.01
+        self._addr = daddr
 
         if type(self._addr) == umit.zion.core.address.IPv4:
             self._sock = socket.socket(socket.AF_INET,
@@ -44,22 +48,40 @@ class Packet(object):
         elif type(self._addr) == umit.zion.core.address.IPv6:
             self._sock = socket.socket(socket.AF_INET6,
                     socket.SOCK_RAW,
-                    socket.IPPROTO_RAW)
+                    socket.IPPROTO_TCP)
         else:
             raise 'Unimplemented protocol.'
 
-        if ptype == options.GET_MODE_SYN:
-            tcp = TCPSYN(args[0], args[1])
-            p = umpa.Packet(tcp)
-            self._raw = p.get_raw()
+        self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+
+        if ptype == options.FORGE_MODE_SYN:
+            if type(self._addr) == umit.zion.core.address.IPv4:
+                ip = IPv4(saddr, self._addr.addr)
+                tcp = TCPSYN(args[0], args[1])
+                self._packet = umpa.Packet(ip, tcp)
+            else:
+                raise 'UMPA unimplemented protocol.'
         else:
-            self._raw = []
+            self._packet = None
 
     def send(self):
         """
         """
-        print self._addr.addr
-        self._sock.sendto(self._raw, (self._addr.addr, 10000))
+        self._sock.sendto(self._packet.get_raw(), (self._addr.addr, 0))
+
+    def stop(self):
+        """
+        """
+        self.flag = False
+
+    def run(self):
+        """
+        """
+        self.flag = True
+        while self.flag:
+            if self.interval:
+                time.sleep(self.interval)
+            self.send()
 
 class IPv4(umpa.protocols.IP):
     """
@@ -67,7 +89,7 @@ class IPv4(umpa.protocols.IP):
     def __init__(self, saddr, daddr):
         """
         """
-        super(IP, self).__init__()
+        super(IPv4, self).__init__()
 
         self.source_address = saddr
         self.destination_address = daddr
