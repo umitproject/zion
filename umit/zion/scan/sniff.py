@@ -22,7 +22,6 @@
 """
 
 import pcap
-import socket
 import struct
 
 import umpa.sniffing
@@ -385,12 +384,13 @@ class Device(object):
 class Sniff(object):
     """
     """
-    def __init__(self):
+    def __init__(self, filter='', fields=[], amount=None):
         """
         """
-        self.amount = None
-        self.filter = ''
-        self.fields = []
+        self.amount = amount
+        self.filter = filter
+        self.fields = fields
+
         self.packets = []
         self.devices = {}
         for d in umpa.sniffing.get_available_devices():
