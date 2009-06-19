@@ -384,12 +384,15 @@ class Device(object):
 class Sniff(object):
     """
     """
-    def __init__(self, filter='', fields=[], amount=None):
+    def __init__(self, filter='', fields=None, amount=None):
         """
         """
         self.amount = amount
         self.filter = filter
-        self.fields = fields
+        if fields is None:
+            self.fields = []
+        else:
+            self.fields = fields
 
         self.packets = []
         self.devices = {}
