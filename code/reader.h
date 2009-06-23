@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "clann.h"
-#include "neuron.h"
 #include "matrix.h"
 
 
