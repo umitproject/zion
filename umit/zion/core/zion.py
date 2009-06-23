@@ -113,8 +113,11 @@ class Zion(object):
                 ports = t.get_open_ports()
 
                 if len(ports):
-                    s.amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
-                    s.amount = int(s.amount)
+                    amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
+
+                    if amount:
+                        s.amount = int(amount)
+
                     s.fields = ['tcp.seq']
                     s.filter = FORGE_FILTER % (t.get_addr().addr, ports[0],
                             addr, port)
@@ -122,6 +125,11 @@ class Zion(object):
                             addr,
                             t.get_addr(),
                             (port, ports[0]))
+
+                    interval = self.__option.get(options.OPTION_SEND_INTERVAL)
+
+                    if amount:
+                        packet.interval = float(interval)
 
                     print
                     print s.filter

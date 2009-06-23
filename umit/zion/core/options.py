@@ -34,6 +34,7 @@ OPTION_PORTS = 7
 OPTION_DETECT = 8
 OPTION_FORGE = 9
 OPTION_FORGE_ADDR = 10
+OPTION_SEND_INTERVAL = 11
 
 FORGE_MODE_SYN = 'syn'
 
@@ -51,10 +52,11 @@ OPTIONS = {'-v':                OPTION_VERBOSE,
            '-f':                OPTION_FORGE,
            '--forge':           OPTION_FORGE,
            '--forge-addr':      OPTION_FORGE_ADDR,
+           '-i':                OPTION_SEND_INTERVAL,
            '-d':                OPTION_DETECT,
            '--detect':          OPTION_DETECT}
 
-OPTIONS_SHORT = 'c:d:p:f:sv'
+OPTIONS_SHORT = 'c:d:i:p:f:sv'
 OPTIONS_LONG = ['capture=',
                 'capture-amount=',
                 'capture-filter=',

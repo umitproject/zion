@@ -56,6 +56,7 @@ class Packet(Thread):
 
         if ptype == options.FORGE_MODE_SYN:
             if type(self._addr) == umit.zion.core.address.IPv4:
+                print saddr
                 ip = IPv4(saddr, self._addr.addr)
                 tcp = TCPSYN(args[0], args[1])
                 self._packet = umpa.Packet(ip, tcp)
@@ -91,8 +92,8 @@ class IPv4(umpa.protocols.IP):
         """
         super(IPv4, self).__init__()
 
-        self.source_address = saddr
-        self.destination_address = daddr
+        self.src = saddr
+        self.dst = daddr
 
 class TCP(umpa.protocols.TCP):
     """
@@ -102,8 +103,8 @@ class TCP(umpa.protocols.TCP):
         """
         super(TCP, self).__init__()
 
-        self.source_port = sport
-        self.destination_port = dport
+        self.srcport = sport
+        self.dstport = dport
 
 class TCPSYN(TCP):
     """
@@ -113,4 +114,4 @@ class TCPSYN(TCP):
         """
         super(TCPSYN, self).__init__(sport, dport)
 
-        self.set_flags('control_bits', syn=True)
+        self.set_flags('flags', syn=True)
