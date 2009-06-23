@@ -56,7 +56,6 @@ class Packet(Thread):
 
         if ptype == options.FORGE_MODE_SYN:
             if type(self._addr) == umit.zion.core.address.IPv4:
-                print saddr
                 ip = IPv4(saddr, self._addr.addr)
                 tcp = TCPSYN(args[0], args[1])
                 self._packet = umpa.Packet(ip, tcp)
