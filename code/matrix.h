@@ -47,7 +47,7 @@ matrix_initialize(struct matrix *a,
                   const unsigned int cols);
 
 /**
- * Initialize an given matrix
+ * Finalize an given matrix
  */
 inline void
 matrix_finalize(struct matrix *a);
