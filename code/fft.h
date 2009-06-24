@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Joao Paulo de Souza Medeiros.
+ * Copyright (C) 2009 Joao Paulo de Souza Medeiros.
  *
  * Author(s): Joao Paulo de Souza Medeiros <ignotus21@gmail.com>
  *
@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <complex.h>
 #include "clann.h"
-#include "matrix.h"
 
 #define FFT_FORWARD 0
 #define FFT_INVERSE 1
