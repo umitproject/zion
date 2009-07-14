@@ -28,7 +28,10 @@ matrix_initialize(struct matrix *a,
 {
     unsigned int size = rows * cols;
 
-    a->values = size ? malloc(sizeof(clann_type) * size) : (clann_type*) NULL;
+    if (size)
+        a->values = (clann_type *) malloc(sizeof(clann_type) * size);
+    else
+        a->values = (clann_type *) NULL;
 
     a->rows = rows;
     a->cols = cols;
@@ -37,7 +40,10 @@ matrix_initialize(struct matrix *a,
 void
 matrix_finalize(struct matrix *a)
 {
-    free(a->values);
+    free((void *) a->values);
+
+    a->rows = 0;
+    a->cols = 0;
 }
 
 clann_type*

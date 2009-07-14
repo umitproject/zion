@@ -42,14 +42,14 @@ new(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix* a;
+    struct matrix a;
 
-    matrix_initialize(a, rows, cols);
+    matrix_initialize(&a, rows, cols);
 
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(a, (void *)&matrix_finalize);
+    return PyCObject_FromVoidPtr(&a, (void *) matrix_finalize);
 }
 
 static PyMethodDef MatrixMethods[] =
@@ -59,7 +59,7 @@ static PyMethodDef MatrixMethods[] =
 };
 
 static char module__doc__[] =
-"CLANN Matrix module"
+"CLANN matrix module"
 ;
 
 PyMODINIT_FUNC
@@ -72,6 +72,7 @@ initmatrix(void)
             module__doc__,
             (PyObject *)NULL,
             PYTHON_API_VERSION);
+
     if (m == NULL)
         return;
 
