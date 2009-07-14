@@ -22,6 +22,12 @@
 
 #include "../code/matrix.h"
 
+static PyObject *MatrixError;
+
+static char matrix_new__doc__[] =
+""
+;
+
 static PyObject*
 matrix_new(PyObject *self, PyObject *args)
 {
@@ -43,5 +49,37 @@ matrix_new(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(a, (void *) &matrix_finalize);
+    return PyCObject_FromVoidPtr(a, (void *)&matrix_finalize);
+}
+
+static PyMethodDef MatrixMethods[] =
+{
+    {"matrix_new",  matrix_new, METH_VARARGS, matrix_new__doc__},
+    {NULL, NULL, 0, NULL}
+};
+
+static char matrix_module__doc__[] =
+""
+;
+
+PyMODINIT_FUNC
+init_matrix(void)
+{
+    PyObject *m;
+
+    m = Py_InitModule4("matrix",
+            MatrixMethods,
+            matrix_module__doc__,
+            (PyObject *)NULL,
+            PYTHON_API_VERSION);
+    if (m == NULL)
+        return;
+
+    MatrixError = PyErr_NewException("matrix.error", NULL, NULL);
+    Py_INCREF(MatrixError);
+    PyModule_AddObject(m, "error", MatrixError);
+
+    if (PyErr_Occurred())
+        Py_FatalError("can't initialize module matrix");
+
 }
