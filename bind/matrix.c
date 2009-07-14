@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Joao Paulo de Souza Medeiros.
+ * Copyright (C) 2009 Joao Paulo de Souza Medeiros.
  *
  * Author(s): Joao Paulo de Souza Medeiros <ignotus21@gmail.com>
  *
@@ -20,16 +20,16 @@
 
 #include <Python.h>
 
-#include "../code/matrix.h"
+#include "matrix.h"
 
 static PyObject *MatrixError;
 
-static char matrix_new__doc__[] =
-""
+static char new__doc__[] =
+"Create a new matrix"
 ;
 
 static PyObject*
-matrix_new(PyObject *self, PyObject *args)
+new(PyObject *self, PyObject *args)
 {
     /**
      * Convert input
@@ -54,22 +54,22 @@ matrix_new(PyObject *self, PyObject *args)
 
 static PyMethodDef MatrixMethods[] =
 {
-    {"matrix_new",  matrix_new, METH_VARARGS, matrix_new__doc__},
+    {"new",  new, METH_VARARGS, new__doc__},
     {NULL, NULL, 0, NULL}
 };
 
-static char matrix_module__doc__[] =
-""
+static char module__doc__[] =
+"CLANN Matrix module"
 ;
 
 PyMODINIT_FUNC
-init_matrix(void)
+initmatrix(void)
 {
     PyObject *m;
 
     m = Py_InitModule4("matrix",
             MatrixMethods,
-            matrix_module__doc__,
+            module__doc__,
             (PyObject *)NULL,
             PYTHON_API_VERSION);
     if (m == NULL)
@@ -81,5 +81,4 @@ init_matrix(void)
 
     if (PyErr_Occurred())
         Py_FatalError("can't initialize module matrix");
-
 }
