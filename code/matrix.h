@@ -65,9 +65,7 @@ matrix_value(const struct matrix *a,
  */
 inline void
 matrix_fill(struct matrix *a,
-            const clann_type v,
-            const unsigned int rows,
-            const unsigned int cols);
+            const clann_type v);
 
 /**
  *

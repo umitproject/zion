@@ -59,12 +59,8 @@ matrix_value(const struct matrix *a,
 
 void
 matrix_fill(struct matrix *a,
-            const clann_type v,
-            const unsigned int rows,
-            const unsigned int cols)
+            const clann_type v)
 {
-    matrix_initialize(a, rows, cols);
-
     unsigned int i;
     for (i = 0; i < a->rows * a->cols; i++)
         a->values[i] = v;
@@ -113,7 +109,8 @@ matrix_product(const struct matrix *a,
     if (a->cols != b->rows)
         return (struct matrix*) NULL;
 
-    matrix_fill(c, 0, a->rows, b->cols);
+    matrix_initialize(c, a->rows, b->cols);
+    matrix_fill(c, 0);
 
     unsigned int i, j, s;
     for (i = 0; i < c->rows; i++)
