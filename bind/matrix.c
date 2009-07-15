@@ -28,6 +28,16 @@ static char new__doc__[] =
 "Create a new matrix"
 ;
 
+static void
+delete(struct matrix *a)
+{
+    unsigned int i;
+    printf("%X\n", a);
+    for (i = 0; i < 30; i++)
+        printf("- %X\n", *(a + i));
+//    matrix_finalize(a);
+}
+
 static PyObject*
 new(PyObject *self, PyObject *args)
 {
@@ -43,13 +53,18 @@ new(PyObject *self, PyObject *args)
      * Call the function
      */
     struct matrix a;
+    PyObject *object = PyCObject_FromVoidPtr(&a, (void (*)(void *)) delete);
 
     matrix_initialize(&a, rows, cols);
+    printf("%X %X\n", &a, a.values);
+    unsigned int i;
+    for (i = 0; i < 30; i++)
+        printf("- %X\n", *(&a + i));
 
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(&a, (void *) matrix_finalize);
+    return object;
 }
 
 static PyMethodDef MatrixMethods[] =
