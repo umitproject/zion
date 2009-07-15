@@ -78,7 +78,7 @@ get(PyObject *self, PyObject *args)
 
     if (row >= a->rows || col >= a->cols)
     {
-        PyErr_SetString(PyExc_IndexError, "matrix indexes exceed its size");
+        PyErr_SetString(PyExc_IndexError, "indexes exceed matrix size");
         return NULL;
     }
 
@@ -88,10 +88,46 @@ get(PyObject *self, PyObject *args)
     return Py_BuildValue("d", (double) *matrix_value(a, row, col));
 }
 
+static char set__doc__[] = "Set a matrix value";
+
+static PyObject*
+set(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    unsigned int row, col;
+    PyObject *m = NULL;
+    double value;
+
+    if (!PyArg_ParseTuple(args, "OIId", &m, &row, &col, &value))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a = PyCObject_AsVoidPtr(m);
+
+    if (row >= a->rows || col >= a->cols)
+    {
+        PyErr_SetString(PyExc_IndexError, "indexes exceed matrix size");
+        return NULL;
+    }
+
+    *matrix_value(a, row, col) = (clann_type) value;
+
+    /**
+     * Convert output
+     */
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyMethodDef MatrixMethods[] =
 {
     {"new", new, METH_VARARGS, new__doc__},
     {"get", get, METH_VARARGS, get__doc__},
+    {"set", set, METH_VARARGS, set__doc__},
     {NULL, NULL, 0, NULL}
 };
 
