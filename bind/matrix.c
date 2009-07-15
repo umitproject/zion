@@ -24,19 +24,14 @@
 
 static PyObject *MatrixError;
 
-static char new__doc__[] =
-"Create a new matrix"
-;
-
 static void
 delete(struct matrix *a)
 {
-    unsigned int i;
-    printf("%X\n", a);
-    for (i = 0; i < 30; i++)
-        printf("- %X\n", *(a + i));
-//    matrix_finalize(a);
+    matrix_finalize(a);
+    free((void *) a);
 }
+
+static char new__doc__[] = "Create a new matrix";
 
 static PyObject*
 new(PyObject *self, PyObject *args)
@@ -52,30 +47,55 @@ new(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix a;
-    PyObject *object = PyCObject_FromVoidPtr(&a, (void (*)(void *)) delete);
+    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
 
-    matrix_initialize(&a, rows, cols);
-    printf("%X %X\n", &a, a.values);
-    unsigned int i;
-    for (i = 0; i < 30; i++)
-        printf("- %X\n", *(&a + i));
+    matrix_initialize(a, rows, cols);
 
     /**
      * Convert output
      */
-    return object;
+    return PyCObject_FromVoidPtr(a, (void *) delete);
+}
+
+static char get__doc__[] = "Get a matrix value";
+
+static PyObject*
+get(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    unsigned int row, col;
+    PyObject *m = NULL;
+
+    if (!PyArg_ParseTuple(args, "OII", &m, &row, &col))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a = PyCObject_AsVoidPtr(m);
+
+    if (row >= a->rows || col >= a->cols)
+    {
+        PyErr_SetString(PyExc_IndexError, "matrix indexes exceed its size");
+        return NULL;
+    }
+
+    /**
+     * Convert output
+     */
+    return Py_BuildValue("d", (double) *matrix_value(a, row, col));
 }
 
 static PyMethodDef MatrixMethods[] =
 {
-    {"new",  new, METH_VARARGS, new__doc__},
+    {"new", new, METH_VARARGS, new__doc__},
+    {"get", get, METH_VARARGS, get__doc__},
     {NULL, NULL, 0, NULL}
 };
 
-static char module__doc__[] =
-"CLANN matrix module"
-;
+static char module__doc__[] = "CLANN matrix module";
 
 PyMODINIT_FUNC
 initmatrix(void)
