@@ -61,13 +61,13 @@ clann_shuffle(unsigned int *list,
  *
  */
 inline void
-clann_initialize();
+clann_initialize(void);
 
 /**
  *
  */
 inline clann_type
-clann_nrand();
+clann_nrand(void);
 
 /**
  *
