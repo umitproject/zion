@@ -20,20 +20,16 @@
 
 #include <Python.h>
 
-#include "matrix.h"
+#include "bind/matrix.h"
 
-static PyObject *MatrixError;
-
-static void
+void
 delete(struct matrix *a)
 {
     matrix_finalize(a);
     free((void *) a);
 }
 
-static char new__doc__[] = "Create a new matrix";
-
-static PyObject*
+PyObject*
 new(PyObject *self, PyObject *args)
 {
     /**
@@ -57,9 +53,7 @@ new(PyObject *self, PyObject *args)
     return PyCObject_FromVoidPtr(a, (void *) delete);
 }
 
-static char get__doc__[] = "Get a matrix value";
-
-static PyObject*
+PyObject*
 get(PyObject *self, PyObject *args)
 {
     /**
@@ -88,9 +82,7 @@ get(PyObject *self, PyObject *args)
     return Py_BuildValue("d", (double) *matrix_value(a, row, col));
 }
 
-static char set__doc__[] = "Set a matrix value";
-
-static PyObject*
+PyObject*
 set(PyObject *self, PyObject *args)
 {
     /**
@@ -123,15 +115,55 @@ set(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-static PyMethodDef MatrixMethods[] =
+PyObject*
+fill(PyObject *self, PyObject *args)
 {
-    {"new", new, METH_VARARGS, new__doc__},
-    {"get", get, METH_VARARGS, get__doc__},
-    {"set", set, METH_VARARGS, set__doc__},
-    {NULL, NULL, 0, NULL}
-};
+    /**
+     * Convert input
+     */
+    PyObject *m = NULL;
+    double value;
 
-static char module__doc__[] = "CLANN matrix module";
+    if (!PyArg_ParseTuple(args, "Od", &m, &value))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a = PyCObject_AsVoidPtr(m);
+
+    matrix_fill(a, (clann_type) value);
+
+    /**
+     * Convert output
+     */
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+PyObject*
+identity(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    unsigned int n;
+
+    if (!PyArg_ParseTuple(args, "I", &n))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+
+    matrix_identity(a, n);
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(a, (void *) delete);
+}
 
 PyMODINIT_FUNC
 initmatrix(void)
