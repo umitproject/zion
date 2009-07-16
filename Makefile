@@ -28,8 +28,8 @@ all:
 		../code/function.o \
 		../code/clann.o \
 		../code/reader.o
-	cd bind; python setup.py build
+	cd bind; python setup.py build_ext -f -b clann
 
 clean:
 	cd code; rm *.o
-	cd bind; rm -rf build
+	cd bind; rm -rf clann/*.so

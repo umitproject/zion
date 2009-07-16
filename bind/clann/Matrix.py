@@ -16,17 +16,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-from distutils.core import setup, Extension
+import clann.matrix
 
-matrix_module = Extension('matrix',
-                          include_dirs = ['../'],
-                          extra_objects = ['../code/matrix.o'],
-                          extra_compile_args = ['-Wall', '-ggdb'],
-                          sources = ['matrix.c'])
 
-setup (name = 'clann',
-       version = '0.1',
-       author='Joao Medeiros',
-       author_email='joaomedeiros@dca.ufrn.br',
-       description = 'This is the CLANN package',
-       ext_modules = [matrix_module])
