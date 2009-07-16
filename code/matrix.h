@@ -92,6 +92,22 @@ matrix_transpose(const struct matrix *a,
  *
  */
 inline struct matrix*
+matrix_add(const struct matrix *a,
+           const struct matrix *b,
+           struct matrix *c);
+
+/**
+ *
+ */
+inline struct matrix*
+matrix_subtract(const struct matrix *a,
+                const struct matrix *b,
+                struct matrix *c);
+
+/**
+ *
+ */
+inline struct matrix*
 matrix_product(const struct matrix *a,
                const struct matrix *b,
                struct matrix *c);

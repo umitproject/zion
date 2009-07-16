@@ -102,6 +102,50 @@ matrix_transpose(const struct matrix *a,
 }
 
 struct matrix*
+matrix_add(const struct matrix *a,
+           const struct matrix *b,
+           struct matrix *c)
+{
+    if (a->rows != b->rows || a->cols != b->cols)
+        return (struct matrix*) NULL;
+
+    matrix_initialize(c, a->rows, a->cols);
+    matrix_fill(c, 0);
+
+    unsigned int i, j;
+    for (i = 0; i < a->rows; i++)
+        for (j = 0; j < a->cols; j++)
+        {
+            *matrix_value(c, i, j) += *matrix_value(a, i, j);
+            *matrix_value(c, i, j) += *matrix_value(b, i, j);
+        }
+
+    return c;
+}
+
+struct matrix*
+matrix_subtract(const struct matrix *a,
+                const struct matrix *b,
+                struct matrix *c)
+{
+    if (a->rows != b->rows || a->cols != b->cols)
+        return (struct matrix*) NULL;
+
+    matrix_initialize(c, a->rows, a->cols);
+    matrix_fill(c, 0);
+
+    unsigned int i, j;
+    for (i = 0; i < a->rows; i++)
+        for (j = 0; j < a->cols; j++)
+        {
+            *matrix_value(c, i, j) += *matrix_value(a, i, j);
+            *matrix_value(c, i, j) -= *matrix_value(b, i, j);
+        }
+
+    return c;
+}
+
+struct matrix*
 matrix_product(const struct matrix *a,
                const struct matrix *b,
                struct matrix *c)
