@@ -21,10 +21,21 @@
 
 import clann.matrix
 
-class Matrix():
+class Matrix(object):
     """
     """
-    def __init__(self, rows, cols):
+    def __init__(self, rows=0, cols=0, fill=0):
         """
         """
         self.__matrix = clann.matrix.new(rows, cols)
+        clann.matrix.fill(self.__matrix, fill)
+
+    def __nonzero__(self):
+        """
+        """
+        return clann.matrix.isnull(self.__matrix)
+
+    def __len__(self):
+        """
+        """
+        return sum(clann.matrix.size(self.__matrix))
