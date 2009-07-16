@@ -81,6 +81,23 @@ transpose(PyObject *self, PyObject *args);
 /**
  *
  */
+static char add__doc__[] = "Create a matrix from the sum of other two";
+
+static PyObject*
+add(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
+static char subtract__doc__[] = "Create a matrix from the subtract of other \
+two";
+
+static PyObject*
+subtract(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
 static char product__doc__[] = "Create a matrix from the product of other two";
 
 static PyObject*
@@ -114,6 +131,8 @@ static PyMethodDef MatrixMethods[] =
     {"fill", fill, METH_VARARGS, fill__doc__},
     {"identity", identity, METH_VARARGS, identity__doc__},
     {"transpose", transpose, METH_VARARGS, transpose__doc__},
+    {"add", add, METH_VARARGS, add__doc__},
+    {"subtract", subtract, METH_VARARGS, subtract__doc__},
     {"product", product, METH_VARARGS, product__doc__},
     {"inverse", inverse, METH_VARARGS, inverse__doc__},
     {"pseudo_inverse", pseudo_inverse, METH_VARARGS, pseudo_inverse__doc__},

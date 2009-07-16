@@ -190,6 +190,64 @@ transpose(PyObject *self, PyObject *args)
 }
 
 PyObject*
+add(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+
+    if (!PyArg_ParseTuple(args, "OO", &a, &b))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *p =(struct matrix *) malloc(sizeof(struct matrix));
+
+    if (!matrix_add(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
+    {
+        PyErr_SetString(PyExc_RuntimeError, "matrices sizes are not equal");
+        return NULL;
+    }
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(p, (void *) delete);
+}
+
+PyObject*
+subtract(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+
+    if (!PyArg_ParseTuple(args, "OO", &a, &b))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *p =(struct matrix *) malloc(sizeof(struct matrix));
+
+    if (!matrix_subtract(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
+    {
+        PyErr_SetString(PyExc_RuntimeError, "matrices sizes are not equal");
+        return NULL;
+    }
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(p, (void *) delete);
+}
+
+PyObject*
 product(PyObject *self, PyObject *args)
 {
     /**
@@ -206,7 +264,12 @@ product(PyObject *self, PyObject *args)
      */
     struct matrix *p =(struct matrix *) malloc(sizeof(struct matrix));
 
-    matrix_product(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p);
+    if (!matrix_product(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
+    {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "matrices sizes does not match for product");
+        return NULL;
+    }
 
     /**
      * Convert output
@@ -232,7 +295,7 @@ inverse(PyObject *self, PyObject *args)
 
     if (!matrix_inverse(PyCObject_AsVoidPtr(m), a))
     {
-        PyErr_SetString(PyExc_TypeError, "matrix does not have inverse");
+        PyErr_SetString(PyExc_RuntimeError, "matrix does not have inverse");
         return NULL;
     }
 
@@ -260,7 +323,7 @@ pseudo_inverse(PyObject *self, PyObject *args)
 
     if (!matrix_pseudo_inverse(PyCObject_AsVoidPtr(m), a))
     {
-        PyErr_SetString(PyExc_TypeError,
+        PyErr_SetString(PyExc_RuntimeError,
                         "matrix does not have pseudo inverse");
         return NULL;
     }
