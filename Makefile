@@ -28,3 +28,8 @@ all:
 		../code/function.o \
 		../code/clann.o \
 		../code/reader.o
+	cd bind; python setup.py build
+
+clean:
+	cd code; rm *.o
+	cd bind; rm -rf build
