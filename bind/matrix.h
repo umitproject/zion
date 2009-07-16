@@ -89,6 +89,23 @@ product(PyObject *self, PyObject *args);
 /**
  *
  */
+static char inverse__doc__[] = "Create a inverse for a given matrix";
+
+static PyObject*
+inverse(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
+static char pseudo_inverse__doc__[] = "Create a pseudo inverse for a given \
+matrix";
+
+static PyObject*
+pseudo_inverse(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
 static PyMethodDef MatrixMethods[] =
 {
     {"new", new, METH_VARARGS, new__doc__},
@@ -98,6 +115,8 @@ static PyMethodDef MatrixMethods[] =
     {"identity", identity, METH_VARARGS, identity__doc__},
     {"transpose", transpose, METH_VARARGS, transpose__doc__},
     {"product", product, METH_VARARGS, product__doc__},
+    {"inverse", inverse, METH_VARARGS, inverse__doc__},
+    {"pseudo_inverse", pseudo_inverse, METH_VARARGS, pseudo_inverse__doc__},
     {NULL, NULL, 0, NULL}
 };
 

@@ -214,6 +214,63 @@ product(PyObject *self, PyObject *args)
     return PyCObject_FromVoidPtr(p, (void *) delete);
 }
 
+PyObject*
+inverse(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *m = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &m))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+
+    if (!matrix_inverse(PyCObject_AsVoidPtr(m), a))
+    {
+        PyErr_SetString(PyExc_TypeError, "matrix does not have inverse");
+        return NULL;
+    }
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(a, (void *) delete);
+}
+
+PyObject*
+pseudo_inverse(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *m = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &m))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+
+    if (!matrix_pseudo_inverse(PyCObject_AsVoidPtr(m), a))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "matrix does not have pseudo inverse");
+        return NULL;
+    }
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(a, (void *) delete);
+}
+
 PyMODINIT_FUNC
 initmatrix(void)
 {
