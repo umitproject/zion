@@ -126,4 +126,10 @@ inline struct matrix*
 matrix_pseudo_inverse(const struct matrix *a,
                       struct matrix *b);
 
+/**
+ *
+ */
+inline int
+matrix_isnull(const struct matrix *a);
+
 #endif

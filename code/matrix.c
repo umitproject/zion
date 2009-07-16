@@ -236,3 +236,14 @@ matrix_pseudo_inverse(const struct matrix *a,
 
     return b;
 }
+
+int
+matrix_isnull(const struct matrix *a)
+{
+    unsigned int i;
+    for (i = 0; i < a->rows * a->cols; i++)
+        if (a->values[i] != (clann_type) 0)
+            return 1;
+
+    return 0;
+}
