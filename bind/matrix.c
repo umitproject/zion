@@ -230,7 +230,7 @@ add(PyObject *self, PyObject *args)
 
     if (!matrix_add(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
     {
-        PyErr_SetString(PyExc_RuntimeError, "matrices sizes are not equal");
+        PyErr_SetString(PyExc_RuntimeError, "matrices' sizes are not equal");
         return NULL;
     }
 
@@ -259,7 +259,7 @@ subtract(PyObject *self, PyObject *args)
 
     if (!matrix_subtract(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
     {
-        PyErr_SetString(PyExc_RuntimeError, "matrices sizes are not equal");
+        PyErr_SetString(PyExc_RuntimeError, "matrices' sizes are not equal");
         return NULL;
     }
 
@@ -289,7 +289,7 @@ product(PyObject *self, PyObject *args)
     if (!matrix_product(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
     {
         PyErr_SetString(PyExc_RuntimeError,
-                        "matrices sizes does not match for product");
+                        "matrices' sizes does not match for product");
         return NULL;
     }
 

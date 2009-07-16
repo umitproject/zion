@@ -27,18 +27,18 @@ class Matrix(object):
     def __init__(self, rows=0, cols=0, fill=0):
         """
         """
-        self.__matrix = clann.matrix.new(rows, cols)
-        clann.matrix.fill(self.__matrix, fill)
+        self.matrix = clann.matrix.new(rows, cols)
+        clann.matrix.fill(self.matrix, fill)
 
     def __nonzero__(self):
         """
         """
-        return clann.matrix.isnull(self.__matrix)
+        return clann.matrix.isnull(self.matrix)
 
     def __len__(self):
         """
         """
-        return sum(clann.matrix.size(self.__matrix))
+        return sum(clann.matrix.size(self.matrix))
 
     def __getitem__(self, key):
         """
@@ -47,7 +47,7 @@ class Matrix(object):
             raise IndexError, "invalid index size"
 
         i, j = key
-        return clann.matrix.get(self.__matrix, i, j)
+        return clann.matrix.get(self.matrix, i, j)
 
     def __setitem__(self, key, value):
         """
@@ -56,4 +56,28 @@ class Matrix(object):
             raise IndexError, "invalid index size"
 
         i, j = key
-        return clann.matrix.set(self.__matrix, i, j, value)
+        return clann.matrix.set(self.matrix, i, j, value)
+
+    def __add__(self, m):
+        """
+        """
+        n = Matrix()
+        n.matrix = clann.matrix.add(self.matrix, m.matrix)
+        
+        return n
+
+    def __sub__(self, m):
+        """
+        """
+        n = Matrix()
+        n.matrix = clann.matrix.subtract(self.matrix, m.matrix)
+        
+        return n
+
+    def __mul__(self, m):
+        """
+        """
+        n = Matrix()
+        n.matrix = clann.matrix.product(self.matrix, m.matrix)
+        
+        return n
