@@ -30,6 +30,28 @@ delete(struct matrix *a)
 }
 
 PyObject*
+size(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *m = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &m))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a = (struct matrix *) PyCObject_AsVoidPtr(m);
+
+    /**
+     * Convert output
+     */
+    return Py_BuildValue("II", a->rows, a->cols);
+}
+
+PyObject*
 new(PyObject *self, PyObject *args)
 {
     /**
@@ -43,7 +65,7 @@ new(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+    struct matrix *a = (struct matrix *) malloc(sizeof(struct matrix));
 
     matrix_initialize(a, rows, cols);
 
@@ -68,7 +90,7 @@ get(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *a = PyCObject_AsVoidPtr(m);
+    struct matrix *a = (struct matrix *) PyCObject_AsVoidPtr(m);
 
     if (row >= a->rows || col >= a->cols)
     {
@@ -98,7 +120,7 @@ set(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *a = PyCObject_AsVoidPtr(m);
+    struct matrix *a = (struct matrix *) PyCObject_AsVoidPtr(m);
 
     if (row >= a->rows || col >= a->cols)
     {
@@ -130,7 +152,7 @@ fill(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *a = PyCObject_AsVoidPtr(m);
+    struct matrix *a = (struct matrix *) PyCObject_AsVoidPtr(m);
 
     matrix_fill(a, (clann_type) value);
 
@@ -155,7 +177,7 @@ identity(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+    struct matrix *a = (struct matrix *) malloc(sizeof(struct matrix));
 
     matrix_identity(a, n);
 
@@ -179,7 +201,7 @@ transpose(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+    struct matrix *a = (struct matrix *) malloc(sizeof(struct matrix));
 
     matrix_transpose(PyCObject_AsVoidPtr(m), a);
 
@@ -204,7 +226,7 @@ add(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *p =(struct matrix *) malloc(sizeof(struct matrix));
+    struct matrix *p = (struct matrix *) malloc(sizeof(struct matrix));
 
     if (!matrix_add(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
     {
@@ -233,7 +255,7 @@ subtract(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *p =(struct matrix *) malloc(sizeof(struct matrix));
+    struct matrix *p = (struct matrix *) malloc(sizeof(struct matrix));
 
     if (!matrix_subtract(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
     {
@@ -262,7 +284,7 @@ product(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *p =(struct matrix *) malloc(sizeof(struct matrix));
+    struct matrix *p = (struct matrix *) malloc(sizeof(struct matrix));
 
     if (!matrix_product(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p))
     {
@@ -291,7 +313,7 @@ inverse(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+    struct matrix *a = (struct matrix *) malloc(sizeof(struct matrix));
 
     if (!matrix_inverse(PyCObject_AsVoidPtr(m), a))
     {
@@ -319,7 +341,7 @@ pseudo_inverse(PyObject *self, PyObject *args)
     /**
      * Call the function
      */
-    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+    struct matrix *a = (struct matrix *) malloc(sizeof(struct matrix));
 
     if (!matrix_pseudo_inverse(PyCObject_AsVoidPtr(m), a))
     {
@@ -332,6 +354,30 @@ pseudo_inverse(PyObject *self, PyObject *args)
      * Convert output
      */
     return PyCObject_FromVoidPtr(a, (void *) delete);
+}
+
+PyObject*
+isnull(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *m = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &m))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a = (struct matrix *) PyCObject_AsVoidPtr(m);
+    PyObject *r = matrix_isnull(a) ? Py_True : Py_False;
+
+    /**
+     * Convert output
+     */
+    Py_INCREF(r);
+    return r;
 }
 
 PyMODINIT_FUNC

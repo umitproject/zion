@@ -27,8 +27,19 @@
 
 static PyObject *MatrixError;
 
+/**
+ *
+ */
 static void
 delete(struct matrix *a);
+
+/**
+ *
+ */
+static char size__doc__[] = "Return the size of matrix";
+
+static PyObject*
+size(PyObject *self, PyObject *args);
 
 /**
  *
@@ -123,8 +134,17 @@ pseudo_inverse(PyObject *self, PyObject *args);
 /**
  *
  */
+static char isnull__doc__[] = "Check if a matrix is null";
+
+static PyObject*
+isnull(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
 static PyMethodDef MatrixMethods[] =
 {
+    {"size", size, METH_VARARGS, size__doc__},
     {"new", new, METH_VARARGS, new__doc__},
     {"get", get, METH_VARARGS, get__doc__},
     {"set", set, METH_VARARGS, set__doc__},
@@ -136,6 +156,7 @@ static PyMethodDef MatrixMethods[] =
     {"product", product, METH_VARARGS, product__doc__},
     {"inverse", inverse, METH_VARARGS, inverse__doc__},
     {"pseudo_inverse", pseudo_inverse, METH_VARARGS, pseudo_inverse__doc__},
+    {"isnull", isnull, METH_VARARGS, isnull__doc__},
     {NULL, NULL, 0, NULL}
 };
 
