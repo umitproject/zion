@@ -39,3 +39,21 @@ class Matrix(object):
         """
         """
         return sum(clann.matrix.size(self.__matrix))
+
+    def __getitem__(self, key):
+        """
+        """
+        if len(key) != 2:
+            raise IndexError, "invalid index size"
+
+        i, j = key
+        return clann.matrix.get(self.__matrix, i, j)
+
+    def __setitem__(self, key, value):
+        """
+        """
+        if len(key) != 2:
+            raise IndexError, "invalid index size"
+
+        i, j = key
+        return clann.matrix.set(self.__matrix, i, j, value)
