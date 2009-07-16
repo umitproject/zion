@@ -165,6 +165,55 @@ identity(PyObject *self, PyObject *args)
     return PyCObject_FromVoidPtr(a, (void *) delete);
 }
 
+PyObject*
+transpose(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *m = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &m))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *a =(struct matrix *) malloc(sizeof(struct matrix));
+
+    matrix_transpose(PyCObject_AsVoidPtr(m), a);
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(a, (void *) delete);
+}
+
+PyObject*
+product(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *a = NULL;
+    PyObject *b = NULL;
+
+    if (!PyArg_ParseTuple(args, "OO", &a, &b))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *p =(struct matrix *) malloc(sizeof(struct matrix));
+
+    matrix_product(PyCObject_AsVoidPtr(a), PyCObject_AsVoidPtr(b), p);
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(p, (void *) delete);
+}
+
 PyMODINIT_FUNC
 initmatrix(void)
 {

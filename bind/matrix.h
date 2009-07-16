@@ -73,6 +73,22 @@ identity(PyObject *self, PyObject *args);
 /**
  *
  */
+static char transpose__doc__[] = "Create a new transposed matrix";
+
+static PyObject*
+transpose(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
+static char product__doc__[] = "Create a matrix from the product of other two";
+
+static PyObject*
+product(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
 static PyMethodDef MatrixMethods[] =
 {
     {"new", new, METH_VARARGS, new__doc__},
@@ -80,6 +96,8 @@ static PyMethodDef MatrixMethods[] =
     {"set", set, METH_VARARGS, set__doc__},
     {"fill", fill, METH_VARARGS, fill__doc__},
     {"identity", identity, METH_VARARGS, identity__doc__},
+    {"transpose", transpose, METH_VARARGS, transpose__doc__},
+    {"product", product, METH_VARARGS, product__doc__},
     {NULL, NULL, 0, NULL}
 };
 
