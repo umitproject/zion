@@ -84,7 +84,7 @@ open(PyObject *self, PyObject *args);
 /**
  *
  */
-static PyMethodDef MatrixMethods[] =
+static PyMethodDef SOMMethods[] =
 {
     {"size", size, METH_VARARGS, size__doc__},
     {"new", new, METH_VARARGS, new__doc__},
