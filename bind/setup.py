@@ -35,7 +35,8 @@ som_module = Extension('som',
 
 metric_module = Extension('metric',
                           include_dirs = ['../'],
-                          extra_objects = ['../code/metric.o'],
+                          extra_objects = ['../code/metric.o',
+                                           '../code/matrix.o'],
                           extra_compile_args = ['-Wall', '-ggdb'],
                           sources = ['metric.c'])
 
