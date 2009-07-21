@@ -33,9 +33,17 @@ som_module = Extension('som',
                        extra_compile_args = ['-Wall', '-ggdb'],
                        sources = ['som.c'])
 
+metric_module = Extension('metric',
+                          include_dirs = ['../'],
+                          extra_objects = ['../code/metric.o'],
+                          extra_compile_args = ['-Wall', '-ggdb'],
+                          sources = ['metric.c'])
+
 setup (name = 'clann',
        version = '0.1',
        author='Joao Medeiros',
        author_email='joaomedeiros@dca.ufrn.br',
        description = 'This is the CLANN package',
-       ext_modules = [matrix_module, som_module])
+       ext_modules = [matrix_module,
+                      som_module,
+                      metric_module])
