@@ -32,6 +32,7 @@ som_initialize(struct som *ann,
     ann->const_1 = 1000 / CLANN_LOG(ann->width);
     ann->const_2 = 1000;
     ann->step = 1;
+    ann->epoch = 0;
 
     ann->grid.x_len = dimension[0];
     ann->grid.y_len = dimension[1];

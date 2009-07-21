@@ -41,9 +41,6 @@ void
 matrix_finalize(struct matrix *a)
 {
     free((void *) a->values);
-
-    a->rows = 0;
-    a->cols = 0;
 }
 
 clann_type*
