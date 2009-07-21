@@ -30,12 +30,6 @@ static PyObject *MatrixError;
 /**
  *
  */
-static void
-delete(struct matrix *a);
-
-/**
- *
- */
 static char size__doc__[] = "Return the size of matrix";
 
 static PyObject*

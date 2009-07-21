@@ -21,7 +21,7 @@
 #include "bind/matrix.h"
 
 void
-delete(struct matrix *a)
+delete_matrix(struct matrix *a)
 {
     matrix_finalize(a);
     free((void *) a);
@@ -70,7 +70,7 @@ new(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(a, (void *) delete);
+    return PyCObject_FromVoidPtr(a, (void *) delete_matrix);
 }
 
 PyObject*
@@ -182,7 +182,7 @@ identity(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(a, (void *) delete);
+    return PyCObject_FromVoidPtr(a, (void *) delete_matrix);
 }
 
 PyObject*
@@ -206,7 +206,7 @@ transpose(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(a, (void *) delete);
+    return PyCObject_FromVoidPtr(a, (void *) delete_matrix);
 }
 
 PyObject*
@@ -235,7 +235,7 @@ add(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(p, (void *) delete);
+    return PyCObject_FromVoidPtr(p, (void *) delete_matrix);
 }
 
 PyObject*
@@ -264,7 +264,7 @@ subtract(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(p, (void *) delete);
+    return PyCObject_FromVoidPtr(p, (void *) delete_matrix);
 }
 
 PyObject*
@@ -294,7 +294,7 @@ product(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(p, (void *) delete);
+    return PyCObject_FromVoidPtr(p, (void *) delete_matrix);
 }
 
 PyObject*
@@ -322,7 +322,7 @@ inverse(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(a, (void *) delete);
+    return PyCObject_FromVoidPtr(a, (void *) delete_matrix);
 }
 
 PyObject*
@@ -351,7 +351,7 @@ pseudo_inverse(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(a, (void *) delete);
+    return PyCObject_FromVoidPtr(a, (void *) delete_matrix);
 }
 
 PyObject*
