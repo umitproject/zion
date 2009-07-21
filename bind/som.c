@@ -21,7 +21,14 @@
 #include "bind/som.h"
 
 void
-delete(struct som *s)
+delete_matrix(struct matrix *a)
+{
+    matrix_finalize(a);
+    free((void *) a);
+}
+
+void
+delete_som(struct som *s)
 {
     som_finalize(s);
     free((void *) s);
@@ -49,8 +56,101 @@ size(PyObject *self, PyObject *args)
     return Py_BuildValue("II", a->grid.x_len, a->grid.y_len);
 }
 
+PyObject*
+new(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    unsigned int i, d[2];
+
+    if (!PyArg_ParseTuple(args, "I(II)", &i, &d[0], &d[1]))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct som *a = (struct som *) malloc(sizeof(struct som));
+
+    som_initialize(a, i, d);
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(a, (void *) delete_som);
+}
+
+PyObject*
+get(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    unsigned int row, col;
+    PyObject *m = NULL;
+
+    if (!PyArg_ParseTuple(args, "OII", &m, &row, &col))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *n = (struct matrix *) malloc(sizeof(struct matrix));
+    struct som *a = (struct som *) PyCObject_AsVoidPtr(m);
+
+    if (row >= a->grid.y_len || col >= a->grid.x_len)
+    {
+        PyErr_SetString(PyExc_IndexError, "indexes exceed output size");
+        return NULL;
+    }
+
+    n->rows = 1;
+    n->cols = a->grid.x_len;
+    n->values = som_grid_get_weights(&a->grid, row, col);
+
+    /**
+     * Convert output
+     */
+    return PyCObject_FromVoidPtr(n, (void *) delete_matrix);
+}
+
+PyObject*
+train(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *s = NULL,
+             *m = NULL;
+    unsigned int i;
+
+    if (!PyArg_ParseTuple(args, "OOI", &s, &m, &i))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *n = (struct matrix *) PyCObject_AsVoidPtr(m);
+    struct som *a = (struct som *) PyCObject_AsVoidPtr(s);
+
+    if (i < 1)
+    {
+        PyErr_SetString(PyExc_IndexError,
+                "number of iterations must be positive");
+        return NULL;
+    }
+
+    som_training(a, n, i);
+
+    /**
+     * Convert output
+     */
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 PyMODINIT_FUNC
-initmatrix(void)
+initsom(void)
 {
     PyObject *m;
 

@@ -30,12 +30,6 @@ static PyObject *SOMError;
 /**
  *
  */
-static void
-delete(struct som *s);
-
-/**
- *
- */
 static char size__doc__[] = "Return the size of SOM output layer";
 
 static PyObject*
@@ -68,30 +62,12 @@ train(PyObject *self, PyObject *args);
 /**
  *
  */
-static char save__doc__[] = "Save a SOM instance to a file";
-
-static PyObject*
-save(PyObject *self, PyObject *args);
-
-/**
- *
- */
-static char open__doc__[] = "Open a SOM file description";
-
-static PyObject*
-open(PyObject *self, PyObject *args);
-
-/**
- *
- */
 static PyMethodDef SOMMethods[] =
 {
     {"size", size, METH_VARARGS, size__doc__},
     {"new", new, METH_VARARGS, new__doc__},
     {"get", get, METH_VARARGS, get__doc__},
     {"train", train, METH_VARARGS, train__doc__},
-    {"save", save, METH_VARARGS, save__doc__},
-    {"open", open, METH_VARARGS, open__doc__},
     {NULL, NULL, 0, NULL}
 };
 

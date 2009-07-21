@@ -26,7 +26,10 @@ matrix_module = Extension('matrix',
 
 som_module = Extension('som',
                        include_dirs = ['../'],
-                       extra_objects = ['../code/som.o'],
+                       extra_objects = ['../code/som.o',
+                                        '../code/clann.o',
+                                        '../code/metric.o',
+                                        '../code/matrix.o'],
                        extra_compile_args = ['-Wall', '-ggdb'],
                        sources = ['som.c'])
 
