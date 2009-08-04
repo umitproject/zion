@@ -190,7 +190,7 @@ class PageStatus(object):
 
 class ScanNotebook(HIGNotebook):
     def __init__(self):
-        HIGNotebook.__init__(self)
+        HIGNotebook.__init__(self, popup=False)
         self.set_scrollable(True)
         self.tab_titles = []
         self.scan_num = 1
@@ -1249,7 +1249,7 @@ class ScanResult(gtk.HPaned):
         self.scan_host_view = ScanHostsView()
         self.scan_result_notebook = ScanResultNotebook()
 
-        self.pack1(self.scan_host_view, True, False)
+        self.pack1(self.scan_host_view, True, True)
         self.pack2(self.scan_result_notebook, True, False)
     def set_parse(self, parse):
         self.parsed = parse
@@ -1304,7 +1304,7 @@ class ScanResult(gtk.HPaned):
 
 class ScanResultNotebook(HIGNotebook):
     def __init__(self):
-        HIGNotebook.__init__(self)
+        HIGNotebook.__init__(self, popup=False)
         self.set_scrollable(True)
         self.set_border_width(5)
         
