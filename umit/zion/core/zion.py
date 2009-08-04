@@ -128,7 +128,7 @@ class Zion(object):
 
                     interval = self.__option.get(options.OPTION_SEND_INTERVAL)
 
-                    if amount:
+                    if interval:
                         packet.interval = float(interval)
 
                     print
