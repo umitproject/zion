@@ -53,7 +53,10 @@ if __name__ == '__main__':
         if address.recognize(a) == address.Unknown:
             l = probe.get_addr_from_name(a)
             for i in l:
-                z.append_target(host.Host(i, a))
+                try:
+                    z.append_target(host.Host(i, a))
+                except:
+                    print "Unimplemented support to address: %s." % i
         else:
             z.append_target(host.Host(a))
 
