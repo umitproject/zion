@@ -364,7 +364,7 @@ class ScanNotebookPage(HIGVBox):
         return self.__verify_comments_changes()
 
     def __create_scan_result(self):
-        self.scan_result = ScanResult()
+        self.scan_result = NmapScanResult()
         self.scan_result.set_parse(self.parsed)
 
         self.host_view_selection = self.scan_result.get_host_selection()
@@ -1242,7 +1242,7 @@ class ScanNotebookPage(HIGVBox):
     def findout_service_icon(self, port_info):
         return gtk.STOCK_YES
 
-class ScanResult(gtk.HPaned):
+class NmapScanResult(gtk.HPaned):
     def __init__(self):
         gtk.HPaned.__init__(self)
         self.parsed = None
