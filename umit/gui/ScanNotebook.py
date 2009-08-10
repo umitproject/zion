@@ -204,7 +204,7 @@ class ScanNotebook(HIGNotebook):
         HIGNotebook.remove_page(self, page_num)
 
     def add_scan_page(self, title):
-        page = ScanNotebookPage()
+        page = NmapScanNotebookPage()
         page.select_first_profile()
 
         self.append_page(page, self.close_scan_cb, tab_title=title)
@@ -307,6 +307,7 @@ def get_service_info(service):
             service.get('service_product', ''),
             service.get('service_version', ''))
 
+
 class ScanNotebookPage(HIGVBox):
     __gsignals__ = {
         'scan-finished' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ())
@@ -323,33 +324,56 @@ class ScanNotebookPage(HIGVBox):
         self.set_spacing(0)
         self.status = PageStatus()
         self.status.set_empty()
-        
+ 
+        self.top_box = HIGVBox()
+
         self.changes = False
         self.comments = {}
         self.hosts = {}
         self.services = {}
 
-        self.parsed = NmapParser()
-        self.top_box = HIGVBox()
-        
         self.__create_toolbar()
-        self.__create_command_toolbar()
-        self.__create_scan_result()
-        self.disable_widgets()
-        
-        self.saved = False
-        self.saved_filename = ''
-
-        self.top_box.set_border_width(6)
-        self.top_box.set_spacing(5)
-        
         self.top_box._pack_noexpand_nofill(self.toolbar)
-        self.top_box._pack_noexpand_nofill(self.command_toolbar)
-        
-        self._pack_noexpand_nofill(self.top_box)
-        self._pack_expand_fill(self.scan_result)
 
-        PluginEngine().core.emit('ScanNotebookPage-created', self)
+    def __create_toolbar(self):
+        self.toolbar = ScanToolbar()
+        self.toolbar.scan_button.set_sensitive(False)
+        
+        self.toolbar.target_entry.child.connect("focus-out-event",
+                self.strip_entry)
+        self.toolbar.profile_entry.child.connect("focus-out-event",
+                self.strip_entry)
+        self.toolbar.target_entry.connect('notify::popup-shown',
+                self.profile_changed)
+        self.toolbar.target_entry.child.connect('button-press-event',
+                self.profile_changed)
+        self.toolbar.profile_entry.connect('changed', self.profile_changed)
+        self.toolbar.profile_entry.connect('notify::popup-shown',
+                self.profile_changed)
+        self.toolbar.profile_entry.child.connect('button-press-event',
+                self.profile_changed)
+
+        self.toolbar.scan_button.connect('clicked', self.start_scan_cb)
+
+    def strip_entry(self, widget, event):
+        """
+        """
+        widget.set_text(widget.get_text().strip())
+
+    def profile_not_found_dialog(self):
+        warn_dialog = HIGAlertDialog(message_format=_("Profile not found!"),
+            secondary_text=_("The profile name you selected/typed "
+                "couldn't be found, and probably doesn't exist. "
+                "Please, check the profile name and try again."),
+                type=gtk.MESSAGE_QUESTION)
+        warn_dialog.run()
+        warn_dialog.destroy()
+
+    def get_tab_label(self):
+        return self.get_parent().get_tab_title(self)
+
+    def set_tab_label(self, label):
+        self.get_parent().set_tab_title(self, label)
 
     def target_focus(self):
         self.toolbar.target_entry.child.grab_focus()
@@ -360,8 +384,112 @@ class ScanNotebookPage(HIGVBox):
             return
         self.toolbar.profile_entry.child.set_text(model[0][0])
 
+
+class ZionScanNotebookPage(ScanNotebookPage):
+    def __init__(self):
+        ScanNotebookPage.__init__(self)
+
+
+class NmapScanNotebookPage(ScanNotebookPage):
+    def __init__(self):
+        ScanNotebookPage.__init__(self)
+        
+        self.changes = False
+        self.comments = {}
+        self.hosts = {}
+        self.services = {}
+
+        self.parsed = NmapParser()
+        
+        self.__create_command_toolbar()
+        self.__create_scan_result()
+        self.disable_widgets()
+        
+        self.saved = False
+        self.saved_filename = ''
+
+        self.top_box.set_border_width(6)
+        self.top_box.set_spacing(5)
+        
+        self.top_box._pack_noexpand_nofill(self.command_toolbar)
+        
+        self._pack_noexpand_nofill(self.top_box)
+        self._pack_expand_fill(self.scan_result)
+
+        PluginEngine().core.emit('NmapScanNotebookPage-created', self)
+
+        # connect super objects to local methods
+        self.toolbar.target_entry.changed_handler = self.toolbar.target_entry.\
+            connect('changed', self.refresh_command_target)
+
+    def strip_entry(self, widget, event):
+        """
+        """
+        try:
+            widget.set_text(widget.get_text().strip())
+            check_command_edited(self.command_toolbar.command_entry)
+        except:
+            pass
+
     def verify_changes(self):
         return self.__verify_comments_changes()
+
+    def refresh_command_target(self, widget):
+        #log.debug(">>> Refresh Command Target")
+
+        profile = self.toolbar.selected_profile
+        #log.debug(">>> Profile: %s" % profile)
+        
+        if profile:
+            target = self.toolbar.selected_target
+            if not target:
+                self.toolbar.scan_button.set_sensitive(False)
+            else:
+                self.toolbar.scan_button.set_sensitive(True)
+
+            try:
+                cmd_profile = CommandProfile()
+                command = cmd_profile.get_command(profile) % target
+                del(cmd_profile)
+                
+                self.command_toolbar.command = command
+            except ProfileNotFound:
+                pass # Go without a profile
+            except TypeError:
+                pass # The target is empty...
+                #self.profile_not_found_dialog()
+    
+    def profile_changed(self, widget, event=None):
+        #log.debug(">>> Refresh Command")
+        profile = self.toolbar.selected_profile
+        target = self.toolbar.selected_target.strip()
+
+        #log.debug(">>> Profile: %s" % profile)
+        #log.debug(">>> Target: %s" % target)
+        
+        try:
+            cmd_profile = CommandProfile()
+            command = cmd_profile.get_command(profile) % target
+            del(cmd_profile)
+            
+            # scan button must be enable if -iR or -iL options are passed
+            if command.find('-iR') != -1 or command.find('-iL') != -1:
+                self.toolbar.scan_button.set_sensitive(True)
+
+                # For these nmap options, target is unecessary.
+                # Removes unnecessary target from the command
+                command = command.replace(target,'').strip()
+            elif target:
+                self.toolbar.scan_button.set_sensitive(True)
+            else:
+                self.toolbar.scan_button.set_sensitive(False)
+
+            self.command_toolbar.command = command
+        except ProfileNotFound:
+            pass
+            #self.profile_not_found_dialog()
+        except TypeError:
+            pass # That means that the command string convertion "%" didn't work
 
     def __create_scan_result(self):
         self.scan_result = NmapScanResult()
@@ -373,28 +501,6 @@ class ScanNotebookPage(HIGVBox):
         self.host_view_selection.connect('changed', self.update_host_info)
         self.service_view_selection.connect('changed', self.update_service_info)
 
-    def __create_toolbar(self):
-        self.toolbar = ScanToolbar()
-        self.toolbar.scan_button.set_sensitive(False)
-        
-        self.toolbar.target_entry.changed_handler = self.toolbar.target_entry.\
-            connect('changed', self.refresh_command_target)
-        self.toolbar.target_entry.connect('notify::popup-shown',
-                self.refresh_command)
-        self.toolbar.target_entry.child.connect('button-press-event',
-                self.refresh_command)
-        self.toolbar.target_entry.child.connect("focus-out-event",
-                self.strip_entry)
-        self.toolbar.profile_entry.connect('changed', self.refresh_command)
-        self.toolbar.profile_entry.connect('notify::popup-shown',
-                self.refresh_command)
-        self.toolbar.profile_entry.child.connect('button-press-event',
-                self.refresh_command)
-        self.toolbar.profile_entry.child.connect("focus-out-event",
-                self.strip_entry)
-
-        self.toolbar.scan_button.connect('clicked', self.start_scan_cb)
-    
     def __create_command_toolbar(self):
         self.command_toolbar = ScanCommandToolbar()
         self.command_toolbar.command_entry.connect('activate',
@@ -410,15 +516,6 @@ class ScanNotebookPage(HIGVBox):
         # When user gets out of the command entry after edition
         self.command_toolbar.command_entry.connect("focus-out-event", 
             self.check_command)
-
-    def strip_entry(self, widget, event):
-        """
-        """
-        try:
-            widget.set_text(widget.get_text().strip())
-            check_command_edited(self.command_toolbar.command_entry)
-        except:
-            pass
 
     def check_command_edited(self, widget):
         """
@@ -461,78 +558,6 @@ class ScanNotebookPage(HIGVBox):
     
     def enable_widgets(self):
         self.scan_result.set_sensitive(True)
-    
-    def refresh_command_target(self, widget):
-        #log.debug(">>> Refresh Command Target")
-
-        profile = self.toolbar.selected_profile
-        #log.debug(">>> Profile: %s" % profile)
-        
-        if profile:
-            target = self.toolbar.selected_target
-            if not target:
-                self.toolbar.scan_button.set_sensitive(False)
-            else:
-                self.toolbar.scan_button.set_sensitive(True)
-
-            try:
-                cmd_profile = CommandProfile()
-                command = cmd_profile.get_command(profile) % target
-                del(cmd_profile)
-                
-                self.command_toolbar.command = command
-            except ProfileNotFound:
-                pass # Go without a profile
-            except TypeError:
-                pass # The target is empty...
-                #self.profile_not_found_dialog()
-    
-    def refresh_command(self, widget, event=None):
-        #log.debug(">>> Refresh Command")
-        profile = self.toolbar.selected_profile
-        target = self.toolbar.selected_target.strip()
-
-        #log.debug(">>> Profile: %s" % profile)
-        #log.debug(">>> Target: %s" % target)
-        
-        try:
-            cmd_profile = CommandProfile()
-            command = cmd_profile.get_command(profile) % target
-            del(cmd_profile)
-            
-            # scan button must be enable if -iR or -iL options are passed
-            if command.find('-iR') != -1 or command.find('-iL') != -1:
-                self.toolbar.scan_button.set_sensitive(True)
-
-                # For these nmap options, target is unecessary.
-                # Removes unnecessary target from the command
-                command = command.replace(target,'').strip()
-            elif target:
-                self.toolbar.scan_button.set_sensitive(True)
-            else:
-                self.toolbar.scan_button.set_sensitive(False)
-
-            self.command_toolbar.command = command
-        except ProfileNotFound:
-            pass
-            #self.profile_not_found_dialog()
-        except TypeError:
-            pass # That means that the command string convertion "%" didn't work
-
-    def profile_not_found_dialog(self):
-        warn_dialog = HIGAlertDialog(message_format=_("Profile not found!"),
-            secondary_text=_("The profile name you selected/typed "
-                "couldn't be found, and probably doesn't exist. "
-                "Please, check the profile name and try again."),
-                type=gtk.MESSAGE_QUESTION)
-        warn_dialog.run()
-        warn_dialog.destroy()
-
-    def get_tab_label(self):
-        return self.get_parent().get_tab_title(self)
-
-    def set_tab_label(self, label):
-        self.get_parent().set_tab_title(self, label)
     
     def start_scan_cb(self, widget=None):
         if not self.toolbar.scan_button.get_property("sensitive"):
