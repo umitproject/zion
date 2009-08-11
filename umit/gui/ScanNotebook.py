@@ -41,7 +41,7 @@ from umit.gui.ScanMapperPage import ScanMapperPage
 from umit.gui.Icons import get_os_icon, get_os_logo, get_vulnerability_logo
 
 from umit.core.NmapCommand import NmapCommand
-from umit.core.UmitConf import CommandProfile, ProfileNotFound
+from umit.core.UmitConf import CommandProfile, ProfileNotFound, Profile
 from umit.core.NmapParser import NmapParser
 from umit.core.Paths import Path
 from umit.core.UmitLogging import log
@@ -204,7 +204,7 @@ class ScanNotebook(HIGNotebook):
         HIGNotebook.remove_page(self, page_num)
 
     def add_scan_page(self, title):
-        page = NmapScanNotebookPage()
+        page = ScanNotebookPage()
         page.select_first_profile()
 
         self.append_page(page, self.close_scan_cb, tab_title=title)
@@ -326,6 +326,13 @@ class ScanNotebookPage(HIGVBox):
         self.status.set_empty()
  
         self.top_box = HIGVBox()
+        self.container = gtk.Frame()
+
+        self.top_box.set_border_width(6)
+        self.top_box.set_spacing(5)
+
+        self.container.set_border_width(3)
+        self.container.set_shadow_type(gtk.SHADOW_NONE)
 
         self.changes = False
         self.comments = {}
@@ -334,6 +341,11 @@ class ScanNotebookPage(HIGVBox):
 
         self.__create_toolbar()
         self.top_box._pack_noexpand_nofill(self.toolbar)
+        self._pack_noexpand_nofill(self.top_box)
+        self._pack_expand_fill(self.container)
+
+        self.__tool = None
+        self.__page = None
 
     def __create_toolbar(self):
         self.toolbar = ScanToolbar()
@@ -354,6 +366,30 @@ class ScanNotebookPage(HIGVBox):
                 self.profile_changed)
 
         self.toolbar.scan_button.connect('clicked', self.start_scan_cb)
+
+    def start_scan_cb(self, widget):
+        """
+        """
+        self.__page.start_scan_cb(widget)
+
+    def profile_changed(self, widget, event=None):
+        """
+        """
+        tool = Profile()._get_it(self.toolbar.selected_profile, 'tool')
+
+        if tool != self.__tool:
+            if self.__page:
+                self.container.remove(self.__page)
+            if type(self.__page) == NmapScanNotebookPage:
+                self.__page = ZionScanNotebookPage(self)
+            else:
+                self.__page = NmapScanNotebookPage(self)
+            self.container.add(self.__page)
+            self.container.show_all()
+        else:
+            self.__page.profile_changed_local(widget, event)
+
+        self.__tool = tool
 
     def strip_entry(self, widget, event):
         """
@@ -384,16 +420,50 @@ class ScanNotebookPage(HIGVBox):
             return
         self.toolbar.profile_entry.child.set_text(model[0][0])
 
+    def kill_scan(self):
+        """
+        """
+        self.__page.kill_scan()
 
-class ZionScanNotebookPage(ScanNotebookPage):
-    def __init__(self):
-        ScanNotebookPage.__init__(self)
+    def close_tab(self):
+        """
+        """
+        self.__page.close_tab()
 
 
-class NmapScanNotebookPage(ScanNotebookPage):
-    def __init__(self):
-        ScanNotebookPage.__init__(self)
-        
+class ZionScanNotebookPage(HIGVBox):
+    """
+    """
+    def __init__(self, page):
+        """
+        """
+        HIGVBox.__init__(self)
+
+        self.page = page
+
+    def profile_changed_local(self, widget, event=None):
+        """
+        """
+        profile = self.page.toolbar.selected_profile
+        target = self.page.toolbar.selected_target.strip()
+
+    def kill_scan(self):
+        """
+        """
+        pass
+
+    def close_tab(self):
+        """
+        """
+        pass
+
+
+class NmapScanNotebookPage(HIGVBox):
+    def __init__(self, page):
+        HIGVBox.__init__(self)
+
+        self.page = page
+
         self.changes = False
         self.comments = {}
         self.hosts = {}
@@ -407,20 +477,16 @@ class NmapScanNotebookPage(ScanNotebookPage):
         
         self.saved = False
         self.saved_filename = ''
-
-        self.top_box.set_border_width(6)
-        self.top_box.set_spacing(5)
         
-        self.top_box._pack_noexpand_nofill(self.command_toolbar)
+        self._pack_noexpand_nofill(self.command_toolbar)
         
-        self._pack_noexpand_nofill(self.top_box)
         self._pack_expand_fill(self.scan_result)
 
         PluginEngine().core.emit('NmapScanNotebookPage-created', self)
 
-        # connect super objects to local methods
-        self.toolbar.target_entry.changed_handler = self.toolbar.target_entry.\
-            connect('changed', self.refresh_command_target)
+        self.page.toolbar.target_entry.changed_handler = \
+                self.page.toolbar.target_entry.connect('changed',
+                        self.refresh_command_target)
 
     def strip_entry(self, widget, event):
         """
@@ -437,15 +503,15 @@ class NmapScanNotebookPage(ScanNotebookPage):
     def refresh_command_target(self, widget):
         #log.debug(">>> Refresh Command Target")
 
-        profile = self.toolbar.selected_profile
+        profile = self.page.toolbar.selected_profile
         #log.debug(">>> Profile: %s" % profile)
         
         if profile:
-            target = self.toolbar.selected_target
+            target = self.page.toolbar.selected_target
             if not target:
-                self.toolbar.scan_button.set_sensitive(False)
+                self.page.toolbar.scan_button.set_sensitive(False)
             else:
-                self.toolbar.scan_button.set_sensitive(True)
+                self.page.toolbar.scan_button.set_sensitive(True)
 
             try:
                 cmd_profile = CommandProfile()
@@ -456,13 +522,14 @@ class NmapScanNotebookPage(ScanNotebookPage):
             except ProfileNotFound:
                 pass # Go without a profile
             except TypeError:
+                print 1
                 pass # The target is empty...
                 #self.profile_not_found_dialog()
     
-    def profile_changed(self, widget, event=None):
+    def profile_changed_local(self, widget, event=None):
         #log.debug(">>> Refresh Command")
-        profile = self.toolbar.selected_profile
-        target = self.toolbar.selected_target.strip()
+        profile = self.page.toolbar.selected_profile
+        target = self.page.toolbar.selected_target.strip()
 
         #log.debug(">>> Profile: %s" % profile)
         #log.debug(">>> Target: %s" % target)
@@ -474,15 +541,15 @@ class NmapScanNotebookPage(ScanNotebookPage):
             
             # scan button must be enable if -iR or -iL options are passed
             if command.find('-iR') != -1 or command.find('-iL') != -1:
-                self.toolbar.scan_button.set_sensitive(True)
+                self.page.toolbar.scan_button.set_sensitive(True)
 
                 # For these nmap options, target is unecessary.
                 # Removes unnecessary target from the command
                 command = command.replace(target,'').strip()
             elif target:
-                self.toolbar.scan_button.set_sensitive(True)
+                self.page.toolbar.scan_button.set_sensitive(True)
             else:
-                self.toolbar.scan_button.set_sensitive(False)
+                self.page.toolbar.scan_button.set_sensitive(False)
 
             self.command_toolbar.command = command
         except ProfileNotFound:
@@ -504,7 +571,7 @@ class NmapScanNotebookPage(ScanNotebookPage):
     def __create_command_toolbar(self):
         self.command_toolbar = ScanCommandToolbar()
         self.command_toolbar.command_entry.connect('activate',
-            lambda x: self.toolbar.scan_button.clicked())
+            lambda x: self.page.toolbar.scan_button.clicked())
         self.command_toolbar.command_entry.connect('changed',
             self.check_command_edited)
         self.command_toolbar.command_entry.connect("focus-out-event",
@@ -526,9 +593,9 @@ class NmapScanNotebookPage(ScanNotebookPage):
         """
         try:
             no_profile = False
-            target = self.toolbar.selected_target.strip()
+            target = self.page.toolbar.selected_target.strip()
 
-            profile = self.toolbar.selected_profile
+            profile = self.page.toolbar.selected_profile
             command = CommandProfile().get_command(profile) % target
 
         except (ProfileNotFound, TypeError):
@@ -536,16 +603,16 @@ class NmapScanNotebookPage(ScanNotebookPage):
 
         if no_profile or widget.get_text().strip() != command.strip():
             self.command_edited = True
-            self.toolbar.scan_button.set_sensitive(True)
-            self.toolbar.target_entry.child.modify_base(gtk.STATE_NORMAL,
+            self.page.toolbar.scan_button.set_sensitive(True)
+            self.page.toolbar.target_entry.child.modify_base(gtk.STATE_NORMAL,
                     gtk.gdk.Color(60000, 60000, 60000))
-            self.toolbar.profile_entry.child.modify_base(gtk.STATE_NORMAL,
+            self.page.toolbar.profile_entry.child.modify_base(gtk.STATE_NORMAL,
                     gtk.gdk.Color(60000, 60000, 60000))
         else:
             self.command_edited = False
-            self.toolbar.target_entry.child.modify_base(gtk.STATE_NORMAL,
+            self.page.toolbar.target_entry.child.modify_base(gtk.STATE_NORMAL,
                     gtk.gdk.Color(65535, 65535, 65535))
-            self.toolbar.profile_entry.child.modify_base(gtk.STATE_NORMAL,
+            self.page.toolbar.profile_entry.child.modify_base(gtk.STATE_NORMAL,
                     gtk.gdk.Color(65535, 65535, 65535))
 
 
@@ -560,14 +627,14 @@ class NmapScanNotebookPage(ScanNotebookPage):
         self.scan_result.set_sensitive(True)
     
     def start_scan_cb(self, widget=None):
-        if not self.toolbar.scan_button.get_property("sensitive"):
+        if not self.page.toolbar.scan_button.get_property("sensitive"):
             return
 
         # There are a lot of (target|command|profile) emptiness check. To don't
         # be fooled by whitespaces is better strip them.
-        target = self.toolbar.selected_target.strip()
+        target = self.page.toolbar.selected_target.strip()
         command = self.command_toolbar.command.strip()
-        profile = self.toolbar.selected_profile.strip()
+        profile = self.page.toolbar.selected_profile.strip()
 
         log.debug(">>> Start Scan:")
         log.debug(">>> Target: '%s'" % target)
@@ -575,16 +642,16 @@ class NmapScanNotebookPage(ScanNotebookPage):
         log.debug(">>> Command: '%s'" % command)
 
         if self.command_edited:
-            self.set_tab_label(_("Personalized Scan"))
+            self.page.set_tab_label(_("Personalized Scan"))
         elif target and profile:
-            self.set_tab_label(_("%s on %s") % (profile, target))
+            self.page.set_tab_label(_("%s on %s") % (profile, target))
         elif target:
-            self.set_tab_label(_("Scan on %s") % target)
+            self.page.set_tab_label(_("Scan on %s") % target)
         elif profile:
-            self.set_tab_label(profile)
+            self.page.set_tab_label(profile)
 
         if target:
-            self.toolbar.add_new_target(target)
+            self.page.toolbar.add_new_target(target)
             
             # TODO: Fix this workarround. The following line will set back the
             # correct command to be executed after the refresh_command_target
@@ -593,7 +660,7 @@ class NmapScanNotebookPage(ScanNotebookPage):
 
         if command:
             # Setting status to scanning
-            self.status.set_scanning()
+            self.page.status.set_scanning()
             self.execute_command(command)
         else:
             warn_dialog = HIGAlertDialog(
@@ -614,9 +681,9 @@ class NmapScanNotebookPage(ScanNotebookPage):
 
     def collect_umit_info(self):
         profile = CommandProfile()
-        profile_name = self.toolbar.selected_profile
+        profile_name = self.page.toolbar.selected_profile
         
-        self.parsed.target = self.toolbar.get_target()
+        self.parsed.target = self.page.toolbar.get_target()
         self.parsed.profile_name = profile_name
         self.parsed.nmap_command = self.command_toolbar.get_command()
         self.parsed.profile = profile.get_command(profile_name)
@@ -638,7 +705,7 @@ class NmapScanNotebookPage(ScanNotebookPage):
 
         self.scan_result.clear_nmap_output()
         self.scan_result.clear_host_view()
-        self.status.set_empty()
+        self.page.status.set_empty()
         self.disable_widgets()
     
     def execute_command(self, command):
@@ -715,9 +782,9 @@ class NmapScanNotebookPage(ScanNotebookPage):
             alive = self.command_execution.scan_state()
         except:
             self.disable_widgets()
-            self.status.set_scan_failed()
+            self.page.status.set_scan_failed()
             self.scan_result.set_nmap_output(self.command_execution.get_error())
-            self.emit("scan-finished")
+            self.page.emit("scan-finished")
             return False
 
         # Maybe this automatic refresh should be eliminated 
@@ -734,19 +801,19 @@ class NmapScanNotebookPage(ScanNotebookPage):
     def load_result(self, file_to_parse):
         ####
         # Setting status to parsing_result
-        self.status.set_parsing_result()
+        self.page.status.set_parsing_result()
         ####
         self._parse(file_to_parse=file_to_parse)
 
         ####
         # Setting status to loaded_unchanged
-        self.status.set_loaded_unchanged()
+        self.page.status.set_loaded_unchanged()
         ####
 
     def parse_result(self, file_to_parse):
         ####
         # Setting status to parsing_result
-        self.status.set_parsing_result()
+        self.page.status.set_parsing_result()
         ####
         self._parse(file_to_parse=file_to_parse)
         
@@ -757,19 +824,19 @@ class NmapScanNotebookPage(ScanNotebookPage):
         
         ####
         # Setting status to unsaved_unchanged
-        self.status.set_unsaved_unchanged()
+        self.page.status.set_unsaved_unchanged()
         ####
 
     def load_from_parsed_result(self, parsed_result):
         ####
         # Setting status to parsing_result
-        self.status.set_parsing_result()
+        self.page.status.set_parsing_result()
         ####
         self._parse(parsed_result=parsed_result)
 
         ####
         # Setting status to unsaved_unchanged
-        self.status.set_unsaved_unchanged()
+        self.page.status.set_unsaved_unchanged()
         ####
 
     def _parse(self, file_to_parse=None, parsed_result=None):
@@ -890,7 +957,7 @@ class NmapScanNotebookPage(ScanNotebookPage):
         target = self.parsed.get_target()
             
         if target:
-            self.toolbar.target_entry.child.set_text(target)
+            self.page.toolbar.target_entry.child.set_text(target)
             
         profile_name = self.parsed.profile_name
             
@@ -904,9 +971,9 @@ class NmapScanNotebookPage(ScanNotebookPage):
                                 annotation=self.parsed.profile_annotation)
             del(profile)
                 
-            self.toolbar.profile_entry.update()
+            self.page.toolbar.profile_entry.update()
                 
-            self.toolbar.selected_profile = profile_name
+            self.page.toolbar.selected_profile = profile_name
         else:
             pass
             # The line bellow seens to be useless
@@ -1147,10 +1214,10 @@ class NmapScanNotebookPage(ScanNotebookPage):
         return hosts
 
     def _save_comment(self, widget, extra, host_id):
-        if self.status.unsaved_unchanged:
-            self.status.set_unsaved_changed()
-        elif self.status.loaded_unchanged or self.status.saved:
-            self.status.set_loaded_changed()
+        if self.page.status.unsaved_unchanged:
+            self.page.status.set_unsaved_changed()
+        elif self.page.status.loaded_unchanged or self.page.status.saved:
+            self.page.status.set_loaded_changed()
         
         # Catch a comment and record it to be saved posteriorly
         log.debug(">>> Catching edited comment to be saved posteriorly.")

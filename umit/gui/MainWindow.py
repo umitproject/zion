@@ -39,7 +39,7 @@ from higwidgets.higboxes import HIGHBox, HIGVBox
 
 from umit.gui.FileChoosers import ResultsFileChooserDialog
 from umit.gui.FileChoosers import SaveResultsFileChooserDialog
-from umit.gui.ScanNotebook import ScanNotebook, NmapScanNotebookPage
+from umit.gui.ScanNotebook import ScanNotebook, ScanNotebookPage
 from umit.gui.ProfileEditor import ProfileEditor
 from umit.gui.ProfileManager import ProfileManager
 from umit.gui.Wizard import Wizard
@@ -575,7 +575,7 @@ class MainWindow(UmitMainWindow):
         page = self.scan_notebook.get_nth_page(page_num)
         filename = None
 
-        if page is None or not isinstance(page, NmapScanNotebookPage):
+        if page is None or not isinstance(page, ScanNotebookPage):
             return True
 
         if page.status.unsaved_unchanged \
