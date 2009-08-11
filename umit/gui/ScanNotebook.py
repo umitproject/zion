@@ -806,7 +806,7 @@ class NmapScanNotebookPage(HIGVBox):
             return True
         else:
             self.parse_result(self.command_execution.get_xml_output_file())
-            self.emit("scan-finished")
+            self.page.emit("scan-finished")
             return False
 
     def load_result(self, file_to_parse):
