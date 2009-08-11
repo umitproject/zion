@@ -380,14 +380,15 @@ class ScanNotebookPage(HIGVBox):
         if tool != self.__tool:
             if self.__page:
                 self.container.remove(self.__page)
+                self.__page.erase_references()
             if type(self.__page) == NmapScanNotebookPage:
                 self.__page = ZionScanNotebookPage(self)
             else:
                 self.__page = NmapScanNotebookPage(self)
             self.container.add(self.__page)
             self.container.show_all()
-        else:
-            self.__page.profile_changed_local(widget, event)
+
+        self.__page.profile_changed_local(widget, event)
 
         self.__tool = tool
 
@@ -457,6 +458,11 @@ class ZionScanNotebookPage(HIGVBox):
         """
         pass
 
+    def erase_references(self):
+        """
+        """
+        pass
+
 
 class NmapScanNotebookPage(HIGVBox):
     def __init__(self, page):
@@ -484,9 +490,14 @@ class NmapScanNotebookPage(HIGVBox):
 
         PluginEngine().core.emit('NmapScanNotebookPage-created', self)
 
-        self.page.toolbar.target_entry.changed_handler = \
-                self.page.toolbar.target_entry.connect('changed',
-                        self.refresh_command_target)
+        self.target_handle_id = self.page.toolbar.target_entry.connect(
+                'changed', self.refresh_command_target)
+        self.page.toolbar.target_entry.changed_handler = self.target_handle_id
+
+    def erase_references(self):
+        """
+        """
+        self.page.toolbar.target_entry.disconnect(self.target_handle_id)
 
     def strip_entry(self, widget, event):
         """
