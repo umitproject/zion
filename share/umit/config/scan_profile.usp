@@ -68,3 +68,9 @@ tool = zion
 description = Detect SYN Proxies using one TCP open port
 hint = 
 annotation = 
+
+[Zion Prompt]
+tool = zion
+description = Show a Zion prompt to allow user uses the backend
+hint = 
+annotation = 
