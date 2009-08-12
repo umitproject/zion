@@ -31,6 +31,8 @@ from higwidgets.higboxes import HIGVBox
 from higwidgets.higdialogs import HIGAlertDialog
 from higwidgets.higscrollers import HIGScrolledWindow
 
+from umit.scan.zion.gui.ZionScanNotebookPage import ZionScanNotebookPage
+
 from umit.gui.ScanHostDetailsPage import ScanHostDetailsPage
 from umit.gui.ScanToolbar import ScanCommandToolbar, ScanToolbar
 from umit.gui.ScanHostsView import ScanHostsView, SCANNING
@@ -430,38 +432,6 @@ class ScanNotebookPage(HIGVBox):
         """
         """
         self.__page.close_tab()
-
-
-class ZionScanNotebookPage(HIGVBox):
-    """
-    """
-    def __init__(self, page):
-        """
-        """
-        HIGVBox.__init__(self)
-
-        self.page = page
-
-    def profile_changed_local(self, widget, event=None):
-        """
-        """
-        profile = self.page.toolbar.selected_profile
-        target = self.page.toolbar.selected_target.strip()
-
-    def kill_scan(self):
-        """
-        """
-        pass
-
-    def close_tab(self):
-        """
-        """
-        pass
-
-    def erase_references(self):
-        """
-        """
-        pass
 
 
 class NmapScanNotebookPage(HIGVBox):
