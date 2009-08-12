@@ -1,6 +1,6 @@
 -- Copyright (C) 2009 Adriano Monteiro Marques.
 --
--- Authors: Joao Paulo de Souza Medeiros <ignotus21@gmail.com>,
+-- Authors: Joao Paulo de Souza Medeiros <ignotus@umitproject.org>
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
