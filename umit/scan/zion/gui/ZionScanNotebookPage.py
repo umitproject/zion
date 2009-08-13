@@ -30,7 +30,15 @@ from umit.core.Paths import Path
 from umit.core.UmitLogging import log
 from umit.core.I18N import _
 
-class ZionProfileSYNProxy(HIGVBox):
+class ZionResultsPage(HIGHBox):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        HIGHBox.__init__(self)
+
+class ZionProfileHoneyd(HIGVBox):
     """
     """
     def __init__(self):
@@ -38,7 +46,15 @@ class ZionProfileSYNProxy(HIGVBox):
         """
         HIGVBox.__init__(self)
 
-class ZionProfilePromptPage(HIGVBox):
+class ZionProfileOS(HIGVBox):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        HIGVBox.__init__(self)
+
+class ZionProfilePrompt(HIGVBox):
     """
     """
     def __init__(self):
@@ -55,25 +71,29 @@ class ZionProfilePromptPage(HIGVBox):
 
         self._pack_noexpand_nofill(self.__command_hbox)
 
-PROFILE_CLASS = {'1': ZionProfileSYNProxy,
-                 '2': ZionProfilePromptPage}
+class ZionProfileSYNProxy(HIGVBox):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        HIGVBox.__init__(self)
 
-class ZionScanNotebookPage(HIGVBox):
+PROFILE_CLASS = {'1': ZionProfileHoneyd,
+                 '2': ZionProfileOS,
+                 '3': ZionProfilePrompt,
+                 '4': ZionProfileSYNProxy}
+
+class ZionScanNotebookPage(gtk.Alignment):
     """
     """
     def __init__(self, page):
         """
         """
-        HIGVBox.__init__(self)
-
-        self.container = gtk.Alignment(0, 0, 1, 1)
-        self.container.set_padding(0, 0, 0, 0)
+        gtk.Alignment.__init__(self, 0, 0, 1, 1)
 
         self.page = page
         self.profile = None
-        self.content = None
-
-        self._pack_expand_fill(self.container)
 
     def profile_changed_local(self, widget, event=None):
         """
@@ -83,13 +103,16 @@ class ZionScanNotebookPage(HIGVBox):
 
         if self.profile != profile:
             id = Profile()._get_it(profile, 'zion_id')
-            if self.content:
-                self.container.remove(self.content)
-            self.content = PROFILE_CLASS[id]()
-            self.container.add(self.content)
-            self.container.show_all()
-
+            if self.get_child():
+                self.remove(self.get_child())
+            self.add(PROFILE_CLASS[id]())
+            self.show_all()
             self.profile = profile
+
+    def start_scan_cb(self, widget):
+        """
+        """
+        pass
 
     def kill_scan(self):
         """

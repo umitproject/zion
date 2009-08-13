@@ -514,14 +514,15 @@ class MainWindow(UmitMainWindow):
 
         xml_scanfile = mktemp()
         f = open(xml_scanfile, "w")
-        current_page.parsed.write_xml(f)
+        current_page.get_parser().write_xml(f)
         f.close()
 
         log.debug("Adding scan to inventory database..")
 
         xmlstore = XMLStore(Path.umitdb_ng, False)
         try:
-            xmlstore.store(xml_scanfile, current_page.parsed, inventory_title)
+            xmlstore.store(xml_scanfile, current_page.get_parser(),
+                    inventory_title)
         finally:
             # close connection to the inventory's database
             xmlstore.close()
@@ -694,12 +695,12 @@ to close current Scan Tab?'),
         return True
 
     def store_result(self, page, filename):
-        page.parsed.scan_name = self.scan_notebook.get_tab_title(page)
+        page.get_parser().scan_name = self.scan_notebook.get_tab_title(page)
 
         if not filename:
             filename = mktemp()
             f = open(filename, "w")
-            page.parsed.write_xml(f)
+            page.get_parser().write_xml(f)
             f.close()
 
         search_config = SearchConfig()
@@ -818,7 +819,7 @@ to close current Scan Tab?'),
             return False
 
         log.debug(">>> Changing scan_name")
-        page.parsed.set_scan_name(new_text)
+        page.get_parser().set_scan_name(new_text)
 
         # Ok we can change this title.
         return True
@@ -1259,7 +1260,7 @@ action's name"))
             if not scan_name:
                 scan_name = _("Scan ") + str(i+1)
 
-            dic[scan_name] = page.parsed
+            dic[scan_name] = page.get_parser()
 
         self.diff_window = DiffWindow(dic)
 

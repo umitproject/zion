@@ -262,7 +262,7 @@ class ScanNotebook(HIGNotebook):
                     return self.sanitize_tab_title(filename)
             except:
                 pass
-    
+ 
         index = self.scan_num
         self.scan_num += 1
         return self.sanitize_tab_title(_('Untitled Scan %s') % index)
@@ -328,13 +328,11 @@ class ScanNotebookPage(HIGVBox):
         self.status.set_empty()
  
         self.top_box = HIGVBox()
-        self.container = gtk.Frame()
-
         self.top_box.set_border_width(6)
         self.top_box.set_spacing(5)
 
-        self.container.set_border_width(3)
-        self.container.set_shadow_type(gtk.SHADOW_NONE)
+        self.container = gtk.Alignment(0, 0, 1, 1)
+        self.container.set_padding(0, 0, 6, 6) # from HIGBox spacing
 
         self.changes = False
         self.comments = {}
@@ -383,10 +381,12 @@ class ScanNotebookPage(HIGVBox):
             if self.__page:
                 self.container.remove(self.__page)
                 self.__page.erase_references()
-            if type(self.__page) == NmapScanNotebookPage:
+            if tool == 'zion':
                 self.__page = ZionScanNotebookPage(self)
-            else:
+            elif tool == 'nmap':
                 self.__page = NmapScanNotebookPage(self)
+            else:
+                raise
             self.container.add(self.__page)
             self.container.show_all()
 
@@ -433,6 +433,14 @@ class ScanNotebookPage(HIGVBox):
         """
         self.__page.close_tab()
 
+    def get_parser(self):
+        """
+        """
+        if self.__tool == 'nmap':
+            return self.__page.parsed
+        if self.__tool == 'zion':
+            return self.__page.parser
+        return None
 
 class NmapScanNotebookPage(HIGVBox):
     def __init__(self, page):

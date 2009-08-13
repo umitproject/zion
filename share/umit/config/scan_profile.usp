@@ -63,16 +63,30 @@ annotation =
 command = nmap -PN -p80 --traceroute %s
 options = Disable ping,Ports to scan,Traceroute
 
-[Zion SYN Proxy Detection]
+[Zion Honeyd Detection]
 tool = zion
 zion_id = 1
-description = Detect SYN Proxies using one TCP open port
+description = Detect Honeyd using one TCP open port
+hint = 
+annotation = 
+
+[Zion OS Detection]
+tool = zion
+zion_id = 2
+description = Detect Operating System using one TCP open port
 hint = 
 annotation = 
 
 [Zion Prompt]
 tool = zion
-zion_id = 2
+zion_id = 3
 description = Show a Zion prompt to allow user uses the backend
+hint = 
+annotation = 
+
+[Zion SYN Proxy Detection]
+tool = zion
+zion_id = 4
+description = Detect SYN Proxies using one TCP open port
 hint = 
 annotation = 
