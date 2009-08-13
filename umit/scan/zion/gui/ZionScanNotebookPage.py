@@ -21,7 +21,7 @@
 
 import gtk
 
-from higwidgets.higboxes import HIGVBox
+from higwidgets.higboxes import HIGVBox, HIGHBox
 from higwidgets.higdialogs import HIGAlertDialog
 from higwidgets.higscrollers import HIGScrolledWindow
 
@@ -29,6 +29,34 @@ from umit.core.UmitConf import ProfileNotFound, Profile
 from umit.core.Paths import Path
 from umit.core.UmitLogging import log
 from umit.core.I18N import _
+
+class ZionProfileSYNProxy(HIGVBox):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        HIGVBox.__init__(self)
+
+class ZionProfilePromptPage(HIGVBox):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        HIGVBox.__init__(self)
+
+        self.__command_hbox = HIGHBox()
+        self.__command_label = gtk.Label(_('Command:'))
+        self.__command_entry = gtk.Entry()
+
+        self.__command_hbox._pack_noexpand_nofill(self.__command_label)
+        self.__command_hbox._pack_expand_fill(self.__command_entry)
+
+        self._pack_noexpand_nofill(self.__command_hbox)
+
+PROFILE_CLASS = {'1': ZionProfileSYNProxy,
+                 '2': ZionProfilePromptPage}
 
 class ZionScanNotebookPage(HIGVBox):
     """
@@ -38,13 +66,30 @@ class ZionScanNotebookPage(HIGVBox):
         """
         HIGVBox.__init__(self)
 
+        self.container = gtk.Alignment(0, 0, 1, 1)
+        self.container.set_padding(0, 0, 0, 0)
+
         self.page = page
+        self.profile = None
+        self.content = None
+
+        self._pack_expand_fill(self.container)
 
     def profile_changed_local(self, widget, event=None):
         """
         """
         profile = self.page.toolbar.selected_profile
         target = self.page.toolbar.selected_target.strip()
+
+        if self.profile != profile:
+            id = Profile()._get_it(profile, 'zion_id')
+            if self.content:
+                self.container.remove(self.content)
+            self.content = PROFILE_CLASS[id]()
+            self.container.add(self.content)
+            self.container.show_all()
+
+            self.profile = profile
 
     def kill_scan(self):
         """

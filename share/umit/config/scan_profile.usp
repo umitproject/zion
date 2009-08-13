@@ -65,12 +65,14 @@ options = Disable ping,Ports to scan,Traceroute
 
 [Zion SYN Proxy Detection]
 tool = zion
+zion_id = 1
 description = Detect SYN Proxies using one TCP open port
 hint = 
 annotation = 
 
 [Zion Prompt]
 tool = zion
+zion_id = 2
 description = Show a Zion prompt to allow user uses the backend
 hint = 
 annotation = 
