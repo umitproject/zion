@@ -23,6 +23,26 @@
 
 from umit.zion.scan import portscan
 
+HELP_TEXT = """\
+Usage: zion [options] [targets]
+
+Options:
+    -v                      Enable verbose output.
+    -c,--capture <if>       Enable capture option on interface <if>.
+    --capture-amount <n>    Number of packets to be captured.
+    --capture-filter <f>    Filter used when capturing (pcap syntax).
+    --capture-fields <s>    Select packet fields to be shown.
+    --capture-save <file>   File to save captured packets.
+    -s,--scan               Perform port scan on targets.
+    -p,--ports              Ports to be scanned.
+    -f,--forge <m>          Forge packets in mode <m> (only 'syn' for now).
+    --forge-addr <addr>     Forge source address.
+    -i <interval>           Used as sending interval when forging packets.
+    -d,--detect             Detect what is running on target machine.
+    -h,--help               Print this help text.
+\
+"""
+
 OPTION_SCAN = 0
 OPTION_CAPTURE = 1
 OPTION_CAPTURE_AMOUNT = 2
@@ -35,10 +55,12 @@ OPTION_DETECT = 8
 OPTION_FORGE = 9
 OPTION_FORGE_ADDR = 10
 OPTION_SEND_INTERVAL = 11
+OPTION_HELP = 12
 
 FORGE_MODE_SYN = 'syn'
 
-OPTIONS = {'-v':                OPTION_VERBOSE,
+OPTIONS = {'-h':                OPTION_HELP,
+           '-v':                OPTION_VERBOSE,
            '-c':                OPTION_CAPTURE,
            '--capture':         OPTION_CAPTURE,
            '--capture-amount':  OPTION_CAPTURE_AMOUNT,
@@ -56,7 +78,7 @@ OPTIONS = {'-v':                OPTION_VERBOSE,
            '-d':                OPTION_DETECT,
            '--detect':          OPTION_DETECT}
 
-OPTIONS_SHORT = 'c:d:i:p:f:sv'
+OPTIONS_SHORT = 'c:d:i:p:f:svh'
 OPTIONS_LONG = ['capture=',
                 'capture-amount=',
                 'capture-filter=',
@@ -66,7 +88,8 @@ OPTIONS_LONG = ['capture=',
                 'forge=',
                 'forge-addr=',
                 'ports=',
-                'detect=']
+                'detect=',
+                'help']
 
 def parse_posts_list(ports):
     """

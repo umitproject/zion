@@ -150,6 +150,10 @@ class Zion(object):
     def run(self):
         """
         """
+        if self.__option.has(options.OPTION_HELP):
+
+            print options.HELP_TEXT
+
         if self.__option.has(options.OPTION_FORGE):
 
             print
@@ -173,3 +177,7 @@ class Zion(object):
             print '-----------------'
 
             self.do_capture()
+
+        else:
+
+            print options.HELP_TEXT
