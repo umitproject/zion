@@ -23,8 +23,8 @@
 
 import time
 import socket
-import umpa.protocols
 
+import umit.umpa.protocols
 import umit.zion.core.address
 
 from umit.zion.core import options
@@ -58,7 +58,7 @@ class Packet(Thread):
             if type(self._addr) == umit.zion.core.address.IPv4:
                 ip = IPv4(saddr, self._addr.addr)
                 tcp = TCPSYN(args[0], args[1])
-                self._packet = umpa.Packet(ip, tcp)
+                self._packet = umit.umpa.Packet(ip, tcp)
             else:
                 raise 'UMPA unimplemented protocol.'
         else:
@@ -83,7 +83,7 @@ class Packet(Thread):
                 time.sleep(self.interval)
             self.send()
 
-class IPv4(umpa.protocols.IP):
+class IPv4(umit.umpa.protocols.IP):
     """
     """
     def __init__(self, saddr, daddr):
@@ -94,7 +94,7 @@ class IPv4(umpa.protocols.IP):
         self.src = saddr
         self.dst = daddr
 
-class TCP(umpa.protocols.TCP):
+class TCP(umit.umpa.protocols.TCP):
     """
     """
     def __init__(self, sport, dport):

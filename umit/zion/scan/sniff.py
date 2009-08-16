@@ -24,7 +24,7 @@
 import pcap
 import struct
 
-import umpa.sniffing
+import umit.umpa.sniffing
 
 class Frame(object):
     """
@@ -396,7 +396,7 @@ class Sniff(object):
 
         self.packets = []
         self.devices = {}
-        for d in umpa.sniffing.get_available_devices():
+        for d in umit.umpa.sniffing.get_available_devices():
             self.devices[d] = Device(d)
 
     def start(self, device):
