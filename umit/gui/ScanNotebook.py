@@ -353,13 +353,15 @@ class ScanNotebookPage(HIGVBox):
         
         self.toolbar.target_entry.child.connect("focus-out-event",
                 self.strip_entry)
+        self.toolbar.target_entry.connect('notify::popup-shown',
+                self.target_changed)
+        self.toolbar.target_entry.child.connect('button-press-event',
+                self.target_changed)
+
         self.toolbar.profile_entry.child.connect("focus-out-event",
                 self.strip_entry)
-        self.toolbar.target_entry.connect('notify::popup-shown',
+        self.toolbar.profile_entry.connect('changed',
                 self.profile_changed)
-        self.toolbar.target_entry.child.connect('button-press-event',
-                self.profile_changed)
-        self.toolbar.profile_entry.connect('changed', self.profile_changed)
         self.toolbar.profile_entry.connect('notify::popup-shown',
                 self.profile_changed)
         self.toolbar.profile_entry.child.connect('button-press-event',
@@ -371,6 +373,11 @@ class ScanNotebookPage(HIGVBox):
         """
         """
         self.__page.start_scan_cb(widget)
+
+    def target_changed(self, widget, event=None):
+        """
+        """
+        self.__page.target_changed(widget, event)
 
     def profile_changed(self, widget, event=None):
         """
@@ -390,7 +397,7 @@ class ScanNotebookPage(HIGVBox):
             self.container.add(self.__page)
             self.container.show_all()
 
-        self.__page.profile_changed_local(widget, event)
+        self.__page.profile_changed(widget, event)
 
         self.__tool = tool
 
@@ -514,8 +521,14 @@ class NmapScanNotebookPage(HIGVBox):
                 print 1
                 pass # The target is empty...
                 #self.profile_not_found_dialog()
-    
-    def profile_changed_local(self, widget, event=None):
+
+    def target_changed(self, widget, event=None):
+        """
+        """
+        # An workaround to the ambiguous interface
+        self.profile_changed(self, widget, event)
+
+    def profile_changed(self, widget, event=None):
         #log.debug(">>> Refresh Command")
         profile = self.page.toolbar.selected_profile
         target = self.page.toolbar.selected_target.strip()
@@ -532,7 +545,7 @@ class NmapScanNotebookPage(HIGVBox):
             if command.find('-iR') != -1 or command.find('-iL') != -1:
                 self.page.toolbar.scan_button.set_sensitive(True)
 
-                # For these nmap options, target is unecessary.
+                # For these nmap options, target is unnecessary.
                 # Removes unnecessary target from the command
                 command = command.replace(target,'').strip()
             elif target:
@@ -545,7 +558,7 @@ class NmapScanNotebookPage(HIGVBox):
             pass
             #self.profile_not_found_dialog()
         except TypeError:
-            pass # That means that the command string convertion "%" didn't work
+            pass # That means that the command string conversion "%" didn't work
 
     def __create_scan_result(self):
         self.scan_result = NmapScanResult()
@@ -642,7 +655,7 @@ class NmapScanNotebookPage(HIGVBox):
         if target:
             self.page.toolbar.add_new_target(target)
             
-            # TODO: Fix this workarround. The following line will set back the
+            # TODO: Fix this workaround. The following line will set back the
             # correct command to be executed after the refresh_command_target
             # method that will be called by the targetcombo update method.
             self.command_toolbar.command = command
@@ -852,7 +865,7 @@ class NmapScanNotebookPage(HIGVBox):
                 self.parsed.parse()
                 log.debug(">>> Successfully parsed!")
             except:
-                log.debug(">>> An exception occourried during xml ouput "
+                log.debug(">>> An exception occurred during xml output "
                     "parsing")
                 try:
                     error = self.command_execution.get_error()
@@ -873,7 +886,7 @@ class NmapScanNotebookPage(HIGVBox):
                     need_root.destroy()
                 else:
                     unknown_problem = HIGAlertDialog(
-                        message_format=_('An unexpected error occourried!'),
+                        message_format=_('An unexpected error occurred!'),
                         secondary_text=error)
                     unknown_problem.run()
                     unknown_problem.destroy()
@@ -965,7 +978,7 @@ class NmapScanNotebookPage(HIGVBox):
             self.page.toolbar.selected_profile = profile_name
         else:
             pass
-            # The line bellow seens to be useless
+            # The line bellow seems to be useless
             #self.command_toolbar.command = self.parsed.get_nmap_command()
 
         self.collect_umit_info()
@@ -1036,7 +1049,7 @@ class NmapScanNotebookPage(HIGVBox):
 
         elif key_num > 1:
             msg = _("your network scan discovered several unknown "
-                "fingerprints sent by the follwoing hosts: ")
+                "fingerprints sent by the following hosts: ")
             for i in fingerprints:
                 msg += "%s, " % i
             msg = msg[:-2]
