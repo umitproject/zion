@@ -71,6 +71,10 @@ class ZionProfilePrompt(HIGVBox):
 
         self._pack_noexpand_nofill(self.__command_hbox)
 
+    def update_target(self, target):
+        """
+        """
+
 class ZionProfileSYNProxy(HIGVBox):
     """
     """
@@ -93,13 +97,13 @@ class ZionScanNotebookPage(gtk.Alignment):
         gtk.Alignment.__init__(self, 0, 0, 1, 1)
 
         self.page = page
+        self.target = None
         self.profile = None
 
-    def profile_changed_local(self, widget, event=None):
+    def profile_changed(self, widget, event=None):
         """
         """
         profile = self.page.toolbar.selected_profile
-        target = self.page.toolbar.selected_target.strip()
 
         if self.profile != profile:
             id = Profile()._get_it(profile, 'zion_id')
@@ -108,6 +112,14 @@ class ZionScanNotebookPage(gtk.Alignment):
             self.add(PROFILE_CLASS[id]())
             self.show_all()
             self.profile = profile
+
+    def target_changed(self, widget, event=None):
+        """
+        """
+        self.target = self.page.toolbar.selected_target.strip()
+
+        if type(self.page) == ZionProfilePrompt:
+            self.page.update_target(self.target)
 
     def start_scan_cb(self, widget):
         """
