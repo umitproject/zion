@@ -384,7 +384,12 @@ class ScanNotebookPage(HIGVBox):
         """
         tool = Profile()._get_it(self.toolbar.selected_profile, 'tool')
 
-        if tool != self.__tool:
+        if not tool:
+            self.container.remove(self.__page)
+            self.__page.erase_references()
+            self.__page = None
+            self.__tool = None
+        elif tool != self.__tool:
             if self.__page:
                 self.container.remove(self.__page)
                 self.__page.erase_references()
@@ -393,13 +398,14 @@ class ScanNotebookPage(HIGVBox):
             elif tool == 'nmap':
                 self.__page = NmapScanNotebookPage(self)
             else:
-                raise
+                self.__page = None
+                return 
             self.container.add(self.__page)
             self.container.show_all()
-
-        self.__page.profile_changed(widget, event)
-
-        self.__tool = tool
+            self.__tool = tool
+            self.__page.profile_changed(widget, event)
+        else:
+            self.__page.profile_changed(widget, event)
 
     def strip_entry(self, widget, event):
         """
@@ -518,7 +524,6 @@ class NmapScanNotebookPage(HIGVBox):
             except ProfileNotFound:
                 pass # Go without a profile
             except TypeError:
-                print 1
                 pass # The target is empty...
                 #self.profile_not_found_dialog()
 
@@ -526,7 +531,7 @@ class NmapScanNotebookPage(HIGVBox):
         """
         """
         # An workaround to the ambiguous interface
-        self.profile_changed(self, widget, event)
+        self.profile_changed(widget, event)
 
     def profile_changed(self, widget, event=None):
         #log.debug(">>> Refresh Command")
