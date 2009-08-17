@@ -102,7 +102,7 @@ class ZionHostsList(gtk.ScrolledWindow):
         self.__hosts_store.set_sort_func(0, self.__sort_type)
         self.__hosts_store.set_sort_func(1, self.__sort_host)
 
-        self.add_with_viewport(self.__hosts_treeview)
+        self.add(self.__hosts_treeview)
 
         self.__hosts_treeview.set_cursor((0,))
         self.__cursor_callback(self.__hosts_treeview)
