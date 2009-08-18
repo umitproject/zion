@@ -31,6 +31,12 @@ from umit.core.Paths import Path
 from umit.core.UmitLogging import log
 from umit.core.I18N import _
 
+ICON_DIR = 'share/pixmaps/zion/'
+
+PIXBUF_FIREWALL = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'firewall.png')
+PIXBUF_SYNPROXY = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'shield.png')
+PIXBUF_HONEYD = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'honey.png')
+
 class ZionProfile(HIGVBox):
     """
     """
@@ -43,12 +49,30 @@ class ZionProfile(HIGVBox):
         self.result = ZionResultsPage()
 
         self.pack_end(self.result)
-        self.show_all()
 
     def update_target(self, target):
         """
         """
         self.target = target
+
+class ZionHostsView(gtk.Notebook):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        gtk.Notebook.__init__(self)
+        self.set_border_width(6)
+        self.set_tab_pos(gtk.POS_TOP)
+
+        self.__create_widgets()
+
+    def __create_widgets(self):
+        """
+        """
+        self.append_page(gtk.Alignment(), gtk.Label(_('Scans')))
+        self.append_page(gtk.Alignment(), gtk.Label(_('Ports')))
+        self.append_page(gtk.Alignment(), gtk.Label(_('Identification')))
 
 class ZionHostsList(gtk.ScrolledWindow):
     """
@@ -57,6 +81,7 @@ class ZionHostsList(gtk.ScrolledWindow):
         """
         """
         gtk.ScrolledWindow.__init__(self)
+        self.set_border_width(6)
         self.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         self.set_shadow_type(gtk.SHADOW_NONE)
 
@@ -83,13 +108,12 @@ class ZionHostsList(gtk.ScrolledWindow):
                                                 self.__cell_text,
                                                 text=1)
 
-        fw = gtk.gdk.pixbuf_new_from_file('share/pixmaps/zion/firewall.png')
-        sp = gtk.gdk.pixbuf_new_from_file('share/pixmaps/zion/shield.png')
-        hp = gtk.gdk.pixbuf_new_from_file('share/pixmaps/zion/honey.png')
-
-        self.__hosts_store.append([fw, 'firewall.example.com'])
-        self.__hosts_store.append([sp, 'synproxy.example.com'])
-        self.__hosts_store.append([hp, 'honeyd.example.com'])
+        self.__hosts_store.append([PIXBUF_FIREWALL,
+            'firewall.example.com\n192.0.2.1'])
+        self.__hosts_store.append([PIXBUF_SYNPROXY,
+            'synproxy.example.com\n192.0.2.2'])
+        self.__hosts_store.append([PIXBUF_HONEYD,
+            'honeyd.example.com\n192.0.2.3'])
 
         self.__column_type.set_reorderable(True)
         self.__column_type.set_resizable(False)
@@ -131,7 +155,6 @@ class ZionResultsPage(gtk.HPaned):
         """
         """
         gtk.HPaned.__init__(self)
-        self.set_border_width(6)
 
         self.__create_widgets()
         self.set_position(200)
@@ -140,8 +163,10 @@ class ZionResultsPage(gtk.HPaned):
         """
         """
         self.__list = ZionHostsList()
+        self.__view = ZionHostsView()
+
         self.add1(self.__list)
-        self.add2(gtk.Label('Right'))
+        self.add2(self.__view)
 
 class ZionProfileHoneyd(ZionProfile):
     """

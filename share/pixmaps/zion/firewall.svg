@@ -16,7 +16,10 @@
    inkscape:version="0.46"
    version="1.0"
    sodipodi:docname="firewall.svg"
-   inkscape:output_extension="org.inkscape.output.svg.inkscape">
+   inkscape:output_extension="org.inkscape.output.svg.inkscape"
+   inkscape:export-filename="/media/data/work/umit/branch/zion/share/pixmaps/zion/firewall.png"
+   inkscape:export-xdpi="5.7600002"
+   inkscape:export-ydpi="5.7600002">
   <defs
      id="defs3322">
     <linearGradient
@@ -312,6 +315,14 @@
        y1="244.048"
        x2="239.46423"
        y2="376.90421" />
+    <filter
+       inkscape:collect="always"
+       id="filter3298">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="4.5306419"
+         id="feGaussianBlur3300" />
+    </filter>
   </defs>
   <sodipodi:namedview
      id="base"
@@ -416,6 +427,11 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(606.35679,106.01969)">
+    <path
+       style="fill:#b3b3b3;fill-opacity:1;stroke:none;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;filter:url(#filter3298)"
+       d="M -286.66226,153.64794 C -130.57496,206.37997 -278.60341,156.37051 -122.51611,209.10255 C -181.29989,240.40086 -360.67649,335.90646 -426.63187,371.02313 C -582.71916,318.29109 -434.69073,368.30056 -590.77806,315.56851 C -522.91396,279.43561 -349.43651,187.07087 -286.66226,153.64794 z"
+       id="path2489"
+       sodipodi:nodetypes="ccccc" />
     <g
        id="g4007"
        transform="matrix(1.1674428,0,0,1.0159876,114.74469,8.6890281)">
@@ -610,5 +626,10 @@
         </g>
       </g>
     </g>
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#ffffff;stroke-width:5.44542789;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M -450.9556,-10.792909 L -286.8095,44.661711"
+       id="path2492"
+       sodipodi:nodetypes="cc" />
   </g>
 </svg>
