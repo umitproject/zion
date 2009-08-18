@@ -31,6 +31,8 @@ from umit.core.Paths import Path
 from umit.core.UmitLogging import log
 from umit.core.I18N import _
 
+from umit.scan.zion.gui.AttractorWidget import AttractorWidget
+
 ICON_DIR = 'share/pixmaps/zion/'
 
 PIXBUF_FIREWALL = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'firewall.png')
@@ -72,7 +74,7 @@ class ZionHostsView(gtk.Notebook):
         """
         self.append_page(gtk.Alignment(), gtk.Label(_('Scans')))
         self.append_page(gtk.Alignment(), gtk.Label(_('Ports')))
-        self.append_page(gtk.Alignment(), gtk.Label(_('Identification')))
+        self.append_page(AttractorWidget(), gtk.Label(_('Identification')))
 
 class ZionHostsList(gtk.ScrolledWindow):
     """

@@ -24,7 +24,36 @@ import gtk
 class AttractorWidget(gtk.DrawingArea):
     """
     """
-    def __init__(self):
+    def __init__(self, input=None):
         """
         """
         gtk.DrawingArea.__init__(self)
+
+        self.__input = input
+
+        self.connect('expose_event', self.expose)
+
+    def expose(self, widget, event):
+        """
+        Drawing callback
+        @type  widget: GtkWidget
+        @param widget: Gtk widget superclass
+        @type  event: GtkEvent
+        @param event: Gtk event of widget
+        @rtype: boolean
+        @return: Indicator of the event propagation
+        """
+        self.set_size_request(400, 400)
+        self.context = widget.window.cairo_create()
+        self.context.rectangle(*event.area)
+        self.context.set_source_rgb(1.0, 1.0, 1.0)
+        self.context.fill()
+
+        self.__draw()
+
+        return False
+
+    def __draw(self):
+        """
+        """
+        pass
