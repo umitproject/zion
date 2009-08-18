@@ -1,5 +1,6 @@
 /**
- * Copyright (C) 2009 Joao Paulo de Souza Medeiros.
+ * Copyright (C) 2009 Joao Paulo de Souza Medeiros
+ * Copyright (C) 2009 Adriano Monteiro Marques
  *
  * Author(s): Joao Paulo de Souza Medeiros <ignotus21@gmail.com>
  *
