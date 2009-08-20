@@ -22,6 +22,7 @@
 import gtk
 import gobject
 
+from higwidgets.higframe import HIGFrameRNet
 from higwidgets.higboxes import HIGVBox, HIGHBox
 from higwidgets.higdialogs import HIGAlertDialog
 from higwidgets.higscrollers import HIGScrolledWindow
@@ -72,9 +73,53 @@ class ZionHostsView(gtk.Notebook):
     def __create_widgets(self):
         """
         """
-        self.append_page(gtk.Alignment(), gtk.Label(_('Scans')))
-        self.append_page(gtk.Alignment(), gtk.Label(_('Ports')))
-        self.append_page(AttractorWidget(), gtk.Label(_('Identification')))
+        self.__scans_page = ZionScansPage()
+        self.__ports_page = ZionPortsPage()
+        self.__ident_page = ZionIdentificationPage()
+
+        self.append_page(self.__scans_page, gtk.Label(_('Scans')))
+        self.append_page(self.__ports_page, gtk.Label(_('Ports')))
+        self.append_page(self.__ident_page, gtk.Label(_('Identification')))
+
+class ZionScansPage(HIGVBox):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        HIGVBox.__init__(self)
+
+class ZionPortsPage(HIGVBox):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        HIGVBox.__init__(self)
+
+class ZionIdentificationPage(HIGVBox):
+    """
+    """
+    def __init__(self):
+        """
+        """
+        HIGVBox.__init__(self)
+
+        self.__create_widgets()
+
+    def __create_widgets(self):
+        """
+        """
+        self.__hbox = HIGHBox()
+        self.__info = gtk.Label(_('Information'))
+        self.__attractor = AttractorWidget()
+        self.__frame_attractor = HIGFrameRNet(_('Attractor'))
+        self.__frame_attractor._add(self.__attractor)
+
+        self.__hbox._pack_expand_fill(self.__info)
+        self.__hbox._pack_noexpand_nofill(self.__frame_attractor)
+
+        self._pack_noexpand_nofill(self.__hbox)
 
 class ZionHostsList(gtk.ScrolledWindow):
     """

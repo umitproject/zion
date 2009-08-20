@@ -29,7 +29,10 @@ class AttractorWidget(gtk.DrawingArea):
         """
         gtk.DrawingArea.__init__(self)
 
-        self.__input = input
+        if input:
+            self.__input = input
+        else:
+            self.__input = []
 
         self.connect('expose_event', self.expose)
 
@@ -43,11 +46,14 @@ class AttractorWidget(gtk.DrawingArea):
         @rtype: boolean
         @return: Indicator of the event propagation
         """
-        self.set_size_request(400, 400)
+        self.set_size_request(200, 200)
         self.context = widget.window.cairo_create()
         self.context.rectangle(*event.area)
         self.context.set_source_rgb(1.0, 1.0, 1.0)
-        self.context.fill()
+        self.context.fill_preserve()
+        self.context.set_line_width(1)
+        self.context.set_source_rgb(0.0, 0.0, 0.0)
+        self.context.stroke()
 
         self.__draw()
 
