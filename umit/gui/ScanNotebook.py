@@ -344,8 +344,9 @@ class ScanNotebookPage(HIGVBox):
         self._pack_noexpand_nofill(self.top_box)
         self._pack_expand_fill(self.container)
 
-        self.__tool = None
-        self.__page = None
+        self.__tool = 'nmap'
+        self.__page = {'nmap': NmapScanNotebookPage(self),
+                       'zion': ZionScanNotebookPage(self)}
 
     def __create_toolbar(self):
         self.toolbar = ScanToolbar()
@@ -372,40 +373,26 @@ class ScanNotebookPage(HIGVBox):
     def start_scan_cb(self, widget):
         """
         """
-        self.__page.start_scan_cb(widget)
+        self.__page[self.__tool].start_scan_cb(widget)
 
     def target_changed(self, widget, event=None):
         """
         """
-        self.__page.target_changed(widget, event)
+        self.__page[self.__tool].target_changed(widget, event)
 
     def profile_changed(self, widget, event=None):
         """
         """
         tool = Profile()._get_it(self.toolbar.selected_profile, 'tool')
 
-        if not tool:
-            self.container.remove(self.__page)
-            self.__page.erase_references()
-            self.__page = None
-            self.__tool = None
-        elif tool != self.__tool:
-            if self.__page:
-                self.container.remove(self.__page)
-                self.__page.erase_references()
-            if tool == 'zion':
-                self.__page = ZionScanNotebookPage(self)
-            elif tool == 'nmap':
-                self.__page = NmapScanNotebookPage(self)
-            else:
-                self.__page = None
-                return 
-            self.container.add(self.__page)
-            self.container.show_all()
+        if tool:
+            if len(self.container.get_children()):
+                self.container.remove(self.__page[self.__tool])
+                self.__page[self.__tool].erase_references()
             self.__tool = tool
-            self.__page.profile_changed(widget, event)
-        else:
-            self.__page.profile_changed(widget, event)
+            self.container.add(self.__page[self.__tool])
+            self.container.show_all()
+            self.__page[self.__tool].profile_changed(widget, event)
 
     def strip_entry(self, widget, event):
         """
@@ -439,20 +426,18 @@ class ScanNotebookPage(HIGVBox):
     def kill_scan(self):
         """
         """
-        self.__page.kill_scan()
+        self.__page[self.__tool].kill_scan()
 
     def close_tab(self):
         """
         """
-        self.__page.close_tab()
+        self.__page[self.__tool].close_tab()
 
     def get_parser(self):
         """
         """
         if self.__tool == 'nmap':
-            return self.__page.parsed
-        if self.__tool == 'zion':
-            return self.__page.parser
+            return self.__page[self.__tool].parsed
         return None
 
 class NmapScanNotebookPage(HIGVBox):
@@ -488,7 +473,8 @@ class NmapScanNotebookPage(HIGVBox):
     def erase_references(self):
         """
         """
-        self.page.toolbar.target_entry.disconnect(self.target_handle_id)
+        if (self.handler_is_connected(self.target_handle_id)):
+            self.page.toolbar.target_entry.disconnect(self.target_handle_id)
 
     def strip_entry(self, widget, event):
         """
