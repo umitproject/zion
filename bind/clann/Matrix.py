@@ -30,6 +30,16 @@ class Matrix(object):
         self.matrix = clann.matrix.new(rows, cols)
         clann.matrix.fill(self.matrix, fill)
 
+    def rows(self):
+        """
+        """
+        return clann.matrix.size(self.matrix)[0]
+
+    def cols(self):
+        """
+        """
+        return clann.matrix.size(self.matrix)[1]
+
     def __nonzero__(self):
         """
         """
