@@ -28,7 +28,7 @@ all:
 		../code/function.o \
 		../code/clann.o \
 		../code/reader.o
-	cd bind; python setup.py build_ext -f -b clann
+	cd bind; python setup.py build_ext -f -b umit/clann
 
 clean:
 	cd code; rm *.o
