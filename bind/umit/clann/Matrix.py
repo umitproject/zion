@@ -19,7 +19,7 @@
 """
 """
 
-import clann.matrix
+import umit.clann.matrix
 
 class Matrix(object):
     """
