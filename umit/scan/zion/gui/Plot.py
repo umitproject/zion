@@ -89,9 +89,23 @@ class Plot(gtk.DrawingArea):
         self.context.scale(self.scale, -self.scale)
 
         self.__draw_content()
+        self.__draw_axis()
 
         return True
 
     def __draw_content(self):
         """
         """
+        if self.__input.cols == 1:
+            pass
+
+        elif self.__input.cols == 2:
+            pass
+
+        elif self.__input.cols == 3:
+            pass
+
+    def __draw_axis(self):
+        """
+        """
+        pass
