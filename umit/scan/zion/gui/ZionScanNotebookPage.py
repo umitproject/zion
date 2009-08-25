@@ -40,24 +40,6 @@ PIXBUF_FIREWALL = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'firewall.png')
 PIXBUF_SYNPROXY = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'shield.png')
 PIXBUF_HONEYD = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'honey.png')
 
-class ZionProfile(HIGVBox):
-    """
-    """
-    def __init__(self, target=None):
-        """
-        """
-        HIGVBox.__init__(self)
-
-        self.target = target
-        self.result = ZionResultsPage()
-
-        self.pack_end(self.result)
-
-    def update_target(self, target):
-        """
-        """
-        self.target = target
-
 class ZionHostsView(gtk.Notebook):
     """
     """
@@ -215,6 +197,32 @@ class ZionResultsPage(gtk.HPaned):
         self.add1(self.__list)
         self.add2(self.__view)
 
+class ZionProfile(HIGVBox):
+    """
+    """
+    def __init__(self, target=None):
+        """
+        """
+        HIGVBox.__init__(self)
+
+        self.target = target
+        self.result = ZionResultsPage()
+
+        self.pack_end(self.result)
+
+    def update_target(self, target):
+        """
+        """
+        self.target = target
+
+    def check_scan(self):
+        """
+        """
+        if self.target:
+            return True
+
+        return False
+
 class ZionProfileHoneyd(ZionProfile):
     """
     """
@@ -247,6 +255,14 @@ class ZionProfilePrompt(ZionProfile):
         self.__command_hbox._pack_expand_fill(self.__command_entry)
 
         self._pack_noexpand_nofill(self.__command_hbox)
+
+    def check_scan(self):
+        """
+        """
+        if self.__command_entry.get_text().strip():
+            return True
+
+        return False
 
 class ZionProfileSYNProxy(ZionProfile):
     """
@@ -298,16 +314,15 @@ class ZionScanNotebookPage(gtk.Alignment):
         target = self.page.toolbar.selected_target.strip()
         self.get_child().update_target(target)
 
-    def check_scan(self):
-        """
-        """
-        self.page.toolbar.scan_button.set_sensitive(True)
-        self.page.toolbar.scan_button.set_sensitive(False)
+        if self.get_child().check_scan():
+            self.page.toolbar.scan_button.set_sensitive(True)
+        else:
+            self.page.toolbar.scan_button.set_sensitive(False)
 
     def start_scan_cb(self, widget):
         """
         """
-        pass
+        self.get_child().start()
 
     def kill_scan(self):
         """
@@ -319,7 +334,17 @@ class ZionScanNotebookPage(gtk.Alignment):
         """
         pass
 
-    def erase_references(self):
+    def create_references(self):
         """
         """
-        pass
+        self.target_handle = self.page.toolbar.target_entry.connect('changed',
+                self.target_changed)
+        self.page.toolbar.target_entry.changed_handler = self.target_handle
+
+    def delete_references(self):
+        """
+        """
+        id = self.target_handle
+        if (self.page.toolbar.target_entry.handler_is_connected(id)):
+            self.page.toolbar.target_entry.disconnect(id)
+            self.page.toolbar.target_entry.changed_handler = None

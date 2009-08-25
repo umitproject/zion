@@ -388,10 +388,11 @@ class ScanNotebookPage(HIGVBox):
         if tool:
             if len(self.container.get_children()):
                 self.container.remove(self.__page[self.__tool])
-                self.__page[self.__tool].erase_references()
+                self.__page[self.__tool].delete_references()
             self.__tool = tool
             self.container.add(self.__page[self.__tool])
             self.container.show_all()
+            self.__page[self.__tool].create_references()
             self.__page[self.__tool].profile_changed(widget, event)
 
     def strip_entry(self, widget, event):
@@ -466,15 +467,20 @@ class NmapScanNotebookPage(HIGVBox):
 
         PluginEngine().core.emit('NmapScanNotebookPage-created', self)
 
+    def create_references(self):
+        """
+        """
         self.target_handle_id = self.page.toolbar.target_entry.connect(
                 'changed', self.refresh_command_target)
         self.page.toolbar.target_entry.changed_handler = self.target_handle_id
 
-    def erase_references(self):
+    def delete_references(self):
         """
         """
-        if (self.handler_is_connected(self.target_handle_id)):
-            self.page.toolbar.target_entry.disconnect(self.target_handle_id)
+        id = self.target_handle_id
+        if (self.page.toolbar.target_entry.handler_is_connected(id)):
+            self.page.toolbar.target_entry.disconnect(id)
+            self.page.toolbar.target_entry.changed_handler = None
 
     def strip_entry(self, widget, event):
         """

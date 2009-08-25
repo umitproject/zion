@@ -105,6 +105,12 @@ class Plot(gtk.DrawingArea):
         elif self.__input.cols == 3:
             pass
 
+        elif self.__input.cols == 4:
+            pass
+
+        else:
+            pass
+
     def __draw_axis(self):
         """
         """
