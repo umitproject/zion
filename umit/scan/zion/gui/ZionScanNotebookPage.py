@@ -32,7 +32,12 @@ from umit.core.Paths import Path
 from umit.core.UmitLogging import log
 from umit.core.I18N import _
 
+from umit.gui.ScanOpenPortsPage import ScanOpenPortsPage
+
 from umit.scan.zion.gui.AttractorWidget import AttractorWidget
+from umit.zion.scan import probe
+from umit.zion.core import address, options, zion, host
+from umit.zion.core.host import PORT_STATE_OPEN
 
 ICON_DIR = 'share/pixmaps/zion/'
 
@@ -56,12 +61,20 @@ class ZionHostsView(gtk.Notebook):
         """
         """
         self.__scans_page = ZionScansPage()
-        self.__ports_page = ZionPortsPage()
+        #self.__ports_page = ZionPortsPage()
+        self.__ports_page = HIGVBox()
         self.__ident_page = ZionIdentificationPage()
+        
+        self.open_ports = ScanOpenPortsPage()
 
         self.append_page(self.__scans_page, gtk.Label(_('Scans')))
         self.append_page(self.__ports_page, gtk.Label(_('Ports')))
         self.append_page(self.__ident_page, gtk.Label(_('Identification')))
+        
+        self.__ports_page.add(self.open_ports)
+        
+    def port_mode(self):
+        self.open_ports.host.port_mode()        
 
 class ZionScansPage(HIGVBox):
     """
@@ -196,6 +209,34 @@ class ZionResultsPage(gtk.HPaned):
 
         self.add1(self.__list)
         self.add2(self.__view)
+        
+    def clear_port_list(self):
+        """Clear Umit's scan result ports list."""
+        self.__view.open_ports.host.clear_port_list()
+        
+    def set_host_port(self, host):
+        """Set host to dipslay in Ports tab."""
+        host_page = self.__view.open_ports.host
+        host_page.switch_port_to_list_store()
+        
+        host_page.clear_port_list()
+        
+        ports = host.get_ports()
+        port_ids = ports.keys()
+        port_ids.sort()
+        
+        for port in port_ids:
+            host_page.add_port(
+                    (self.findout_service_icon(ports[port]), ) +
+                    get_port_info(ports[port]))
+            
+    def update_host_info(self, host):
+        """Update host info to show host ports."""
+        self.__view.port_mode()
+        self.set_host_port(host)        
+            
+    def findout_service_icon(self, port_info):
+        return gtk.STOCK_YES            
 
 class ZionProfile(HIGVBox):
     """
@@ -238,6 +279,31 @@ class ZionProfileOS(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
+        
+    def start(self):
+        """
+        """
+        z = zion.Zion(options.Options(), [])
+        
+        self.result.clear_port_list()
+        
+        # what options are needed ?
+        z.get_option_object().add("-s")
+        
+        if address.recognize(self.target) == address.Unknown:
+            l = probe.get_addr_from_name(self.target)
+            for i in l:
+                try:
+                    z.append_target(host.Host(i, self.target))
+                except:
+                    print "Unimplemented support to address: %s." % i
+        else:
+            z.append_target(host.Host(self.target))
+              
+        z.run()
+        
+        # update host information
+        self.result.update_host_info(z.get_target_list()[0])
 
 class ZionProfilePrompt(ZionProfile):
     """
@@ -292,13 +358,14 @@ class ZionScanNotebookPage(gtk.Alignment):
         """
         """
         profile = self.page.toolbar.selected_profile
+        target = self.page.toolbar.selected_target.strip()
 
         if self.profile != profile:
             id = Profile()._get_it(profile, 'zion_id')
             if self.get_child():
                 self.remove(self.get_child())
 
-            self.add(PROFILE_CLASS[id]())
+            self.add(PROFILE_CLASS[id](target))
 
             if type(self.get_child()) == ZionProfilePrompt:
                 self.page.toolbar.target_entry.set_sensitive(False)
@@ -348,3 +415,28 @@ class ZionScanNotebookPage(gtk.Alignment):
         if (self.page.toolbar.target_entry.handler_is_connected(id)):
             self.page.toolbar.target_entry.disconnect(id)
             self.page.toolbar.target_entry.changed_handler = None
+
+def get_port_info(port):
+    """Return port info."""
+    if (port.status == host.PORT_STATE_OPEN):
+        status = 'open'
+    elif (port.status == host.PORT_STATE_FILTERED):
+        status = 'filtered'
+    else:
+        status = 'closed'
+        
+    if (port.protocol == host.PROTOCOL_TCP):
+        protocol = 'tcp'
+    elif (port.protocol == PROTOCOL_UDP):
+        protocol = 'udp'
+    elif (port.protocol == PROTOCOL_ICMP):
+        procotol = 'icmp'
+    else:
+        protocol = ''
+
+    return (
+            int(port.number),
+            protocol,
+            status,
+            port.service,
+            '')

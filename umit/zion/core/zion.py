@@ -69,7 +69,7 @@ class Zion(object):
 
         for target in self.__target:
             print target
-
+            
     def do_capture(self, dev=None):
         """
         """

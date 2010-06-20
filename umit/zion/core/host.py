@@ -103,6 +103,10 @@ class Host(object):
                 result.append(port.number)
 
         return result
+    
+    def get_ports(self):
+        """Return ports scanned."""
+        return self.__ports
 
     def __str__(self):
         """
@@ -125,4 +129,4 @@ class Host(object):
 
 if __name__ == "__main__":
 
-    print Host(addr=(127,0,0,1)).get_addr()
+    print Host(addr=("127.0.0.1")).get_addr()
