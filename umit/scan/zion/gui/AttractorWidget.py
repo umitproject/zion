@@ -30,3 +30,9 @@ class AttractorWidget(Plot):
         """
         """
         Plot.__init__(self, input)
+        
+    def update(self, input=None):
+        """
+        """
+        Plot.update(self,input)
+        

@@ -23,6 +23,7 @@
 
 import random
 
+from umit.clann import som
 from umit.zion.core import options, host
 from umit.zion.scan import sniff, portscan, forge
 
@@ -36,11 +37,18 @@ class Zion(object):
         """
         self.__option = option
         self.__target = target
+        self.__attractors = []
+        self.__isn = []
 
     def get_option_object(self):
         """
         """
         return self.__option
+    
+    def reset_options(self):
+        """
+        """
+        self.__option = options.Options()
 
     def append_target(self, target):
         """
@@ -74,6 +82,7 @@ class Zion(object):
         """
         """
         s = sniff.Sniff()
+        s.som = self.__som
 
         try:
             if not dev:
@@ -82,6 +91,9 @@ class Zion(object):
             if self.__option.has(options.OPTION_CAPTURE_AMOUNT):
                 amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
                 s.amount = int(amount)
+            else:
+                # TODO: what should be default value ?
+                s.amount = 10
 
             if self.__option.has(options.OPTION_CAPTURE_FILTER):
                 s.filter = self.__option.get(options.OPTION_CAPTURE_FILTER)
@@ -90,7 +102,7 @@ class Zion(object):
                 fields = self.__option.get(options.OPTION_CAPTURE_FIELDS)
                 s.fields = fields.split(',')
 
-            s.start(dev)
+            self.__isn = s.start(dev)
         except Exception, e:
             print 'Error:', e
         except KeyboardInterrupt:
@@ -150,6 +162,8 @@ class Zion(object):
     def run(self):
         """
         """
+        self.__som = som.new(10,(30,30))
+        
         if self.__option.has(options.OPTION_HELP):
 
             print options.HELP_TEXT
@@ -177,7 +191,41 @@ class Zion(object):
             print '-----------------'
 
             self.do_capture()
+            
+            self.__classification()
 
         else:
+            print options.HELP_TEXT 
+                    
+        
+    def __classification(self):
+        """ Get attractors and put them in SOM. """
+        
+        ordered = True
+        
+        # verify if isn numbers are ordered ascendly
+        for i in range(1,len(self.__isn)):
+            if self.__isn[i] < self.__isn[i-1]:
+                ordered = False
+                break
+            
+        Rt = []
+        self.__attractors = []
 
-            print options.HELP_TEXT
+        if ordered==False:
+            Rt = self.__isn
+        else:
+            for i in range(0, len(self.__isn)-1):
+                Rt.append(self.__isn[i+1] - self.__isn[i])
+                
+        for i in range(0, len(Rt)-1):
+            self.__attractors.append((Rt[i+1],Rt[i]))
+         
+        # TODO: confirm how train works
+        #som.train(self.__som, matrix, 1800)
+
+        
+    def get_attractors(self):
+        """
+        """
+        return self.__attractors

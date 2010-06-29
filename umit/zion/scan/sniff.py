@@ -26,6 +26,8 @@ import struct
 
 import umit.umpa.sniffing
 
+from umit.clann import som
+
 class Frame(object):
     """
     """
@@ -384,10 +386,12 @@ class Device(object):
 class Sniff(object):
     """
     """
-    def __init__(self, filter='', fields=None, amount=None):
+    
+    def __init__(self, filter='', fields=None, amount=None, som=None):
         """
         """
         self.amount = amount
+        self.som = som
         self.filter = filter
         if fields is None:
             self.fields = []
@@ -405,6 +409,7 @@ class Sniff(object):
         capture = pcap.pcap(device)
         capture.setfilter(self.filter)
         number = 0
+        isn = []
 
         for timestamp, packet in capture:
             p = Packet(timestamp, packet, capture.datalink())
@@ -419,6 +424,11 @@ class Sniff(object):
                 print '(%f)' % p.get_timestamp(),', '.join(s)
             else:
                 print '\n', p
-
+            tcpseq = p.get_field("tcp.seq")
+            if tcpseq:
+                isn.append(int(tcpseq))
+                                
             if number == self.amount:
                 break
+            
+        return isn

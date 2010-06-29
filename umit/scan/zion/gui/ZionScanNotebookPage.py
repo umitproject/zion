@@ -74,7 +74,12 @@ class ZionHostsView(gtk.Notebook):
         self.__ports_page.add(self.open_ports)
         
     def port_mode(self):
-        self.open_ports.host.port_mode()        
+        self.open_ports.host.port_mode() 
+        
+    def get_identification_page(self):
+        """
+        """
+        return self.__ident_page
 
 class ZionScansPage(HIGVBox):
     """
@@ -115,6 +120,12 @@ class ZionIdentificationPage(HIGVBox):
         self.__hbox._pack_noexpand_nofill(self.__frame_attractor)
 
         self._pack_noexpand_nofill(self.__hbox)
+        
+    def update_attractors(self,attractors):
+        """
+        """
+        self.__attractor.update(attractors)
+        
 
 class ZionHostsList(gtk.ScrolledWindow):
     """
@@ -236,7 +247,12 @@ class ZionResultsPage(gtk.HPaned):
         self.set_host_port(host)        
             
     def findout_service_icon(self, port_info):
-        return gtk.STOCK_YES            
+        return gtk.STOCK_YES
+    
+    def get_hosts_view(self):
+        """
+        """
+        return self.__view
 
 class ZionProfile(HIGVBox):
     """
@@ -304,6 +320,18 @@ class ZionProfileOS(ZionProfile):
         
         # update host information
         self.result.update_host_info(z.get_target_list()[0])
+        
+        z.reset_options()
+        
+        # TODO: get default device
+        z.get_option_object().add("-c","wlan0")
+        z.get_option_object().add("--capture-amount",100)
+        z.run()
+        
+        attractors = z.get_attractors()
+        
+        self.result.get_hosts_view().get_identification_page().update_attractors(attractors)
+
 
 class ZionProfilePrompt(ZionProfile):
     """

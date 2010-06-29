@@ -88,30 +88,47 @@ class Plot(gtk.DrawingArea):
         self.scale = max(self.area) * 0.8
         self.context.scale(self.scale, -self.scale)
 
-        self.__draw_content()
+        self.__draw_content(widget)
         self.__draw_axis()
 
         return True
 
-    def __draw_content(self):
+    def __draw_content(self,widget):
         """
         """
-        if self.__input.cols == 1:
-            pass
-
-        elif self.__input.cols == 2:
-            pass
-
-        elif self.__input.cols == 3:
-            pass
-
-        elif self.__input.cols == 4:
-            pass
-
-        else:
-            pass
+        if len(self.__input) > 0:
+            xvalues = []
+            yvalues = []
+            for i in range(0,len(self.__input)):
+                a,b = self.__input[i]
+                xvalues.append(a)
+                yvalues.append(b)
+            
+                xaxis = (min(xvalues),max(xvalues))
+                yaxis = (min(yvalues),max(yvalues))
+        
+            self.__draw_points(widget, self.__input,xaxis,yaxis)
+        
+        
+    def __draw_points(self, widget, points, xaxis, yaxis):
+        """ Draw the points normalized to fit design area """
+        gc = widget.style.fg_gc[gtk.STATE_NORMAL]
+                
+        xratio = (xaxis[1]-xaxis[0])/200.0
+        yratio = (yaxis[1]-yaxis[0])/200.0
+               
+        for i in range(0,len(self.__input)):
+            point = self.__input[i]
+            x = int(point[0]/xratio)
+            y = 200-int(point[1]/yratio)
+            widget.window.draw_point(gc, x, y)
 
     def __draw_axis(self):
         """
         """
         pass
+    
+    def update(self, input=None):
+        """
+        """
+        self.__input = input
