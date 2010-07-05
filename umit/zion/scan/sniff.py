@@ -409,8 +409,8 @@ class Sniff(object):
         capture = pcap.pcap(device)
         capture.setfilter(self.filter)
         number = 0
-        isn = []
-
+        result = []
+        
         for timestamp, packet in capture:
             p = Packet(timestamp, packet, capture.datalink())
             p.disassemble()
@@ -422,13 +422,11 @@ class Sniff(object):
                 for f in self.fields:
                     s.append(str(p.get_field(f)))
                 print '(%f)' % p.get_timestamp(),', '.join(s)
+                result.append((p.get_timestamp(),s))
             else:
                 print '\n', p
-            tcpseq = p.get_field("tcp.seq")
-            if tcpseq:
-                isn.append(int(tcpseq))
-                                
+                                            
             if number == self.amount:
                 break
-            
-        return isn
+        
+        return result

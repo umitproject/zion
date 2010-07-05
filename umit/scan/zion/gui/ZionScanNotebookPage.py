@@ -287,6 +287,11 @@ class ZionProfileHoneyd(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
+        
+    def start(self):
+        """
+        """
+        
 
 class ZionProfileOS(ZionProfile):
     """
@@ -325,7 +330,7 @@ class ZionProfileOS(ZionProfile):
         
         # TODO: get default device
         z.get_option_object().add("-c","wlan0")
-        z.get_option_object().add("--capture-amount",100)
+        z.get_option_object().add("-d")
         z.run()
         
         attractors = z.get_attractors()

@@ -28,6 +28,7 @@ from umit.zion.core import options, host
 from umit.zion.scan import sniff, portscan, forge
 
 FORGE_FILTER = 'src host %s and src port %s and dst host %s and dst port %s'
+AMOUNT_ISN_DETECTION = 5000
 
 class Zion(object):
     """
@@ -37,6 +38,7 @@ class Zion(object):
         """
         self.__option = option
         self.__target = target
+        self.__capture_result = []
         self.__attractors = []
         self.__isn = []
 
@@ -82,7 +84,6 @@ class Zion(object):
         """
         """
         s = sniff.Sniff()
-        s.som = self.__som
 
         try:
             if not dev:
@@ -91,9 +92,6 @@ class Zion(object):
             if self.__option.has(options.OPTION_CAPTURE_AMOUNT):
                 amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
                 s.amount = int(amount)
-            else:
-                # TODO: what should be default value ?
-                s.amount = 10
 
             if self.__option.has(options.OPTION_CAPTURE_FILTER):
                 s.filter = self.__option.get(options.OPTION_CAPTURE_FILTER)
@@ -102,7 +100,7 @@ class Zion(object):
                 fields = self.__option.get(options.OPTION_CAPTURE_FIELDS)
                 s.fields = fields.split(',')
 
-            self.__isn = s.start(dev)
+            self.__capture_result = s.start(dev)
         except Exception, e:
             print 'Error:', e
         except KeyboardInterrupt:
@@ -162,8 +160,6 @@ class Zion(object):
     def run(self):
         """
         """
-        self.__som = som.new(10,(30,30))
-        
         if self.__option.has(options.OPTION_HELP):
 
             print options.HELP_TEXT
@@ -183,29 +179,53 @@ class Zion(object):
             print '-------------------------'
 
             self.do_scan()
+                        
+        elif self.__option.has(options.OPTION_DETECT):
+            
+            print
+            print 'OS Detection'
+            print '------------'
+            
+            # configure parameters for OS detection
+            self.__option.add('--capture-fields','tcp.seq')
+            if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
+                self.__option.add('--capture-amount',AMOUNT_ISN_DETECTION)
+            
+            print 'Capturing packets'
+            self.do_capture()
+            
+            if len(self.__capture_result) == 0:
+                print 'Error: no results available'
+            else:
+                isn = []
+                for i in range(0,len(self.__capture_result)):
+                    if self.__capture_result[i][1][0] <> 'None':
+                        isn.append(int(self.__capture_result[i][1][0]))
 
+                print 'Creating attractors'
+                self.__som = som.new(10,(30,30))
+                self.__classification(isn)
+                
         elif self.__option.has(options.OPTION_CAPTURE):
 
             print
             print 'Capturing packets'
             print '-----------------'
 
-            self.do_capture()
-            
-            self.__classification()
+            self.do_capture()                
 
         else:
             print options.HELP_TEXT 
                     
         
-    def __classification(self):
+    def __classification(self,isn):
         """ Get attractors and put them in SOM. """
         
         ordered = True
         
         # verify if isn numbers are ordered ascendly
-        for i in range(1,len(self.__isn)):
-            if self.__isn[i] < self.__isn[i-1]:
+        for i in range(1,len(isn)):
+            if isn[i] < isn[i-1]:
                 ordered = False
                 break
             
@@ -213,10 +233,10 @@ class Zion(object):
         self.__attractors = []
 
         if ordered==False:
-            Rt = self.__isn
+            Rt = isn
         else:
-            for i in range(0, len(self.__isn)-1):
-                Rt.append(self.__isn[i+1] - self.__isn[i])
+            for i in range(0, len(isn)-1):
+                Rt.append(isn[i+1] - isn[i])
                 
         for i in range(0, len(Rt)-1):
             self.__attractors.append((Rt[i+1],Rt[i]))
