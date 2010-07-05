@@ -387,11 +387,10 @@ class Sniff(object):
     """
     """
     
-    def __init__(self, filter='', fields=None, amount=None, som=None):
+    def __init__(self, filter='', fields=None, amount=None):
         """
         """
         self.amount = amount
-        self.som = som
         self.filter = filter
         if fields is None:
             self.fields = []
@@ -425,7 +424,7 @@ class Sniff(object):
                 result.append((p.get_timestamp(),s))
             else:
                 print '\n', p
-                                            
+
             if number == self.amount:
                 break
         

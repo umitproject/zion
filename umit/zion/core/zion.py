@@ -22,13 +22,16 @@
 """
 
 import random
+from math import sqrt
 
 from umit.clann import som
 from umit.zion.core import options, host
 from umit.zion.scan import sniff, portscan, forge
 
 FORGE_FILTER = 'src host %s and src port %s and dst host %s and dst port %s'
-AMOUNT_ISN_DETECTION = 5000
+AMOUNT_OS_DETECTION = 2000
+AMOUNT_HONEYD_DETECTION = 25
+SEND_INTERVAL = 0.02
 
 class Zion(object):
     """
@@ -40,7 +43,6 @@ class Zion(object):
         self.__target = target
         self.__capture_result = []
         self.__attractors = []
-        self.__isn = []
 
     def get_option_object(self):
         """
@@ -147,7 +149,7 @@ class Zion(object):
 
                     try:
                         packet.start()
-                        s.start(self.__option.get(options.OPTION_CAPTURE))
+                        self.__capture_result = s.start(self.__option.get(options.OPTION_CAPTURE))
                         packet.stop()
                     except Exception, e:
                         print 'Error:', e
@@ -187,24 +189,21 @@ class Zion(object):
             print '------------'
             
             # configure parameters for OS detection
-            self.__option.add('--capture-fields','tcp.seq')
             if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
-                self.__option.add('--capture-amount',AMOUNT_ISN_DETECTION)
+                self.__option.add('--capture-amount',AMOUNT_OS_DETECTION)
+            if not self.__option.has(options.OPTION_SEND_INTERVAL):
+                self.__option.add('-i',SEND_INTERVAL)                
+            self.__option.add('-f','syn')
             
             print 'Capturing packets'
-            self.do_capture()
-            
-            if len(self.__capture_result) == 0:
-                print 'Error: no results available'
-            else:
-                isn = []
-                for i in range(0,len(self.__capture_result)):
-                    if self.__capture_result[i][1][0] <> 'None':
-                        isn.append(int(self.__capture_result[i][1][0]))
+            self.do_forge()
 
-                print 'Creating attractors'
-                self.__som = som.new(10,(30,30))
-                self.__classification(isn)
+            print 'Calculating PRNG'
+            Rt = self.calculate_PRNG()
+            
+            print 'Creating attractors'
+            self.__som = som.new(10,(30,30))
+            self.__classification(Rt)
                 
         elif self.__option.has(options.OPTION_CAPTURE):
 
@@ -215,11 +214,23 @@ class Zion(object):
             self.do_capture()                
 
         else:
-            print options.HELP_TEXT 
-                    
+            print options.HELP_TEXT
+            
+            
+    def honeyd_detection(self,target):
+        """ Detect if target are an honeyd. """
+        pass
+            
+    def calculate_PRNG(self):
+        """ Calculate Pseudo Random Number Generator from ISN captured. """
         
-    def __classification(self,isn):
-        """ Get attractors and put them in SOM. """
+        if len(self.__capture_result) == 0:
+            print 'Error: no results available'
+        else:
+            isn = []
+            for i in range(len(self.__capture_result)):
+                if self.__capture_result[i][1][0] <> 'None':
+                    isn.append(int(self.__capture_result[i][1][0]))
         
         ordered = True
         
@@ -230,15 +241,22 @@ class Zion(object):
                 break
             
         Rt = []
-        self.__attractors = []
-
+        
         if ordered==False:
             Rt = isn
         else:
-            for i in range(0, len(isn)-1):
+            for i in range(len(isn)-1):
                 Rt.append(isn[i+1] - isn[i])
+                    
+        return Rt
+    
+        
+    def __classification(self,Rt):
+        """ Get attractors and put them in SOM. """
                 
-        for i in range(0, len(Rt)-1):
+        self.__attractors = []
+                
+        for i in range(len(Rt)-1):
             self.__attractors.append((Rt[i+1],Rt[i]))
          
         # TODO: confirm how train works

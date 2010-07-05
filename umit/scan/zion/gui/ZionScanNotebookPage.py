@@ -287,11 +287,7 @@ class ZionProfileHoneyd(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
-        
-    def start(self):
-        """
-        """
-        
+
 
 class ZionProfileOS(ZionProfile):
     """
@@ -307,10 +303,7 @@ class ZionProfileOS(ZionProfile):
         z = zion.Zion(options.Options(), [])
         
         self.result.clear_port_list()
-        
-        # what options are needed ?
-        z.get_option_object().add("-s")
-        
+                
         if address.recognize(self.target) == address.Unknown:
             l = probe.get_addr_from_name(self.target)
             for i in l:
@@ -319,19 +312,17 @@ class ZionProfileOS(ZionProfile):
                 except:
                     print "Unimplemented support to address: %s." % i
         else:
-            z.append_target(host.Host(self.target))
-              
+            z.append_target(host.Host(self.target))      
+        
+        
+        # TODO: get default device and default forge address
+        z.get_option_object().add("-c","wlan0")
+        z.get_option_object().add("-d")
+        z.get_option_object().add("--forge-addr","192.168.1.2")
         z.run()
         
         # update host information
         self.result.update_host_info(z.get_target_list()[0])
-        
-        z.reset_options()
-        
-        # TODO: get default device
-        z.get_option_object().add("-c","wlan0")
-        z.get_option_object().add("-d")
-        z.run()
         
         attractors = z.get_attractors()
         

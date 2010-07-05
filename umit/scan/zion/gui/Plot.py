@@ -116,12 +116,19 @@ class Plot(gtk.DrawingArea):
                 
         xratio = (xaxis[1]-xaxis[0])/200.0
         yratio = (yaxis[1]-yaxis[0])/200.0
-               
+             
+        points = []
+        
         for i in range(0,len(self.__input)):
             point = self.__input[i]
             x = int(point[0]/xratio)
             y = 200-int(point[1]/yratio)
-            widget.window.draw_point(gc, x, y)
+            points.append((x,y))
+            
+        unique_points = set(points)
+        
+        for point in points:
+            widget.window.draw_point(gc, point[0], point[1])
 
     def __draw_axis(self):
         """
