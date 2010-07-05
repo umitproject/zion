@@ -219,7 +219,41 @@ class Zion(object):
             
     def honeyd_detection(self,target):
         """ Detect if target are an honeyd. """
-        pass
+        
+        print 'start honeyd detection'
+        self.__target = []
+        self.append_target(target)
+        
+        # configure parameters for honeyd detection
+        if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
+            self.__option.add('--capture-amount',AMOUNT_HONEYD_DETECTION)
+        self.__option.add('-f','syn')
+                
+        self.do_forge()
+        Rt = self.calculate_PRNG()
+        
+        if len(Rt) > 0:
+
+            # verify cycles
+            for i in range(0,5):
+                values = set(Rt[i::5])
+                if not len(values)==1:
+                    return False
+                    
+            # verify constant increments
+            cycle = Rt[:5]
+            increments = []
+            for i in range(0,5):
+                increments.append(cycle[(i+1)%5]-cycle[i%5])
+            incs = set(increments)
+            for k in incs:
+                if increments.count(k)==4:
+                    return True
+
+            return False                
+        else:
+            return False
+
             
     def calculate_PRNG(self):
         """ Calculate Pseudo Random Number Generator from ISN captured. """
