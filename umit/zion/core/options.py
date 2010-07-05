@@ -78,7 +78,7 @@ OPTIONS = {'-h':                OPTION_HELP,
            '-d':                OPTION_DETECT,
            '--detect':          OPTION_DETECT}
 
-OPTIONS_SHORT = 'c:d:i:p:f:svh'
+OPTIONS_SHORT = 'c:i:p:f:svhd'
 OPTIONS_LONG = ['capture=',
                 'capture-amount=',
                 'capture-filter=',
@@ -88,7 +88,7 @@ OPTIONS_LONG = ['capture=',
                 'forge=',
                 'forge-addr=',
                 'ports=',
-                'detect=',
+                'detect',
                 'help']
 
 def parse_posts_list(ports):
