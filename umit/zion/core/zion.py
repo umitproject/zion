@@ -22,6 +22,7 @@
 """
 
 import random
+import time
 from math import sqrt
 
 from umit.clann import som, matrix
@@ -32,6 +33,7 @@ FORGE_FILTER = 'src host %s and src port %s and dst host %s and dst port %s'
 AMOUNT_OS_DETECTION = 2000
 AMOUNT_HONEYD_DETECTION = 25
 SEND_INTERVAL = 0.1
+SYNPROXY_INTERVAL = 1
 
 class Zion(object):
     """
@@ -125,43 +127,52 @@ class Zion(object):
                 ports = t.get_open_ports()
 
                 if len(ports):
-                    amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
-
-                    if amount:
-                        s.amount = int(amount)
-
-                    s.fields = ['tcp.seq']
-                    s.filter = FORGE_FILTER % (t.get_addr().addr, ports[0],
-                            addr, port)
-                    packet = forge.Packet(options.FORGE_MODE_SYN,
-                            addr,
-                            t.get_addr(),
-                            (port, ports[0]))
-
-                    interval = self.__option.get(options.OPTION_SEND_INTERVAL)
-
-                    if interval:
-                        packet.interval = float(interval)
-
-                    print
-                    print s.filter
-                    print
-
-                    try:
-                        packet.start()
-                        self.__capture_result = s.start(self.__option.get(options.OPTION_CAPTURE))
-                        packet.stop()
-                    except Exception, e:
-                        print 'Error:', e
-                    except KeyboardInterrupt:
-                        packet.stop()
+                    self.do_forge_mode_syn(s, t, ports[0], addr, port)
 
         else:
             print 'Unimplemented forge mode %s.' % mode
 
+            
+    def do_forge_mode_syn(self, s, target, target_port, addr, port):
+        """
+        """
+        
+        amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
+
+        if amount:
+            s.amount = int(amount)
+
+        s.fields = ['tcp.seq']
+        s.filter = FORGE_FILTER % (target.get_addr().addr, target_port,
+                addr, port)
+        packet = forge.Packet(options.FORGE_MODE_SYN,
+                addr,
+                target.get_addr(),
+                (port, target_port))
+
+        interval = self.__option.get(options.OPTION_SEND_INTERVAL)
+
+        if interval:
+            packet.interval = float(interval)
+
+        print
+        print s.filter
+        print
+
+        try:
+            packet.start()
+            self.__capture_result = s.start(self.__option.get(options.OPTION_CAPTURE))
+            packet.stop()
+        except Exception, e:
+            print 'Error:', e
+        except KeyboardInterrupt:
+            packet.stop()
+                        
+
     def run(self):
         """
         """
+        self.synproxy_detection(self.__target[0])
         if self.__option.has(options.OPTION_HELP):
 
             print options.HELP_TEXT
@@ -253,6 +264,51 @@ class Zion(object):
         else:
             return False
 
+        
+    def synproxy_detection(self, target):
+        """ Detect if target is an syn proxy. """
+        
+        print 'start syn proxy detection'
+        self.__target = []
+        self.append_target(target)
+        
+        # configure parameters for honeyd detection
+        if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
+            self.__option.add('--capture-amount',1)
+        self.__option.add('-f','syn')
+        
+        # search for open ports in target
+        self.do_scan()
+        ports = target.get_open_ports()
+        
+        origin_port1 = random.randint(1024, 65535)
+        while True:
+            origin_port2 = random.randint(1024, 65535)
+            if origin_port2!=origin_port1:
+                break
+
+        s = sniff.Sniff()
+        addr = self.__option.get(options.OPTION_FORGE_ADDR)
+        
+        self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
+        isn1 = self.__capture_result[0][1]
+        time.sleep(SYNPROXY_INTERVAL)
+        self.do_forge_mode_syn(s, target, ports[0], addr, origin_port2)
+        isn2 = self.__capture_result[0][1]
+        time.sleep(SYNPROXY_INTERVAL)
+        self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
+        isn3 = self.__capture_result[0][1]
+        
+        print 'isns:'
+        print isn1
+        print isn2
+        print isn3
+        
+        if isn1!=isn2 and isn1==isn3:
+            return True
+        else:
+            return False
+
             
     def calculate_PRNG(self):
         """ Calculate Pseudo Random Number Generator from ISN captured. """
@@ -303,9 +359,9 @@ class Zion(object):
             self.__attractors.append((x, y))
             matrix.set(self.__matrix, i, 0, x)
             matrix.set(self.__matrix, i, 1, y)
-            
+
         # TODO: confirm how train works
-        som.train(self.__som, self.__matrix, 1800)
+        som.train(self.__som, self.__matrix, 1800)        
 
         
     def get_attractors(self):

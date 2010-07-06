@@ -327,13 +327,13 @@ class ZionProfileHoneyd(ZionProfile):
             self.result.get_hosts_list().add_host(i, PIXBUF_FIREWALL)
             
         z.get_option_object().add("-c","wlan0")
-        z.get_option_object().add("--forge-addr","192.168.1.2")
+        z.get_option_object().add("--forge-addr","192.168.1.4")
         
-        """for target in targets:
+        for target in targets:
             if z.honeyd_detection(target):
                 print 'target is honeyd'
             else:
-                print 'target isnt honeyd'"""
+                print 'target isnt honeyd'
 
 
 class ZionProfileOS(ZionProfile):
@@ -365,7 +365,7 @@ class ZionProfileOS(ZionProfile):
         # TODO: get default device and default forge address
         z.get_option_object().add("-c","wlan0")
         z.get_option_object().add("-d")
-        z.get_option_object().add("--forge-addr","192.168.1.2")
+        z.get_option_object().add("--forge-addr","192.168.1.4")
         z.run()
         
         # update host information
@@ -408,6 +408,37 @@ class ZionProfileSYNProxy(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
+        
+    def start(self):
+        """
+        """
+        z = zion.Zion(options.Options(), [])
+        
+        self.result.get_hosts_list().clear_hosts()
+        targets = []
+        
+        if address.recognize(self.target) == address.Unknown:
+            l = probe.get_addr_from_name(self.target)
+            for i in l:
+                try:
+                    targets.append(host.Host(i, self.target))
+                    host_str = '%s\n%s' % (i, self.target)
+                    self.result.get_hosts_list().add_host(host_str, PIXBUF_FIREWALL)
+                except:
+                    print "Unimplemented support to address: %s." % i
+        else:
+            targets.append(host.Host(self.target))
+            self.result.get_hosts_list().add_host(i, PIXBUF_FIREWALL)
+            
+        z.get_option_object().add("-c","wlan0")
+        z.get_option_object().add("--forge-addr","192.168.1.4")
+        
+        for target in targets:
+            if z.synproxy_detection(target):
+                print 'target is syn proxy'
+            else:
+                print 'target isnt syn proxy'
+                
 
 PROFILE_CLASS = {'1': ZionProfileHoneyd,
                  '2': ZionProfileOS,
