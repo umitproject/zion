@@ -161,12 +161,12 @@ class ZionHostsList(gtk.ScrolledWindow):
                                                 self.__cell_text,
                                                 text=1)
 
-        self.__hosts_store.append([PIXBUF_FIREWALL,
+        """self.__hosts_store.append([PIXBUF_FIREWALL,
             'firewall.example.com\n192.0.2.1'])
         self.__hosts_store.append([PIXBUF_SYNPROXY,
             'synproxy.example.com\n192.0.2.2'])
         self.__hosts_store.append([PIXBUF_HONEYD,
-            'honeyd.example.com\n192.0.2.3'])
+            'honeyd.example.com\n192.0.2.3'])"""
 
         self.__column_type.set_reorderable(True)
         self.__column_type.set_resizable(False)
@@ -188,8 +188,9 @@ class ZionHostsList(gtk.ScrolledWindow):
         """
         """
         path = widget.get_cursor()[0]
-        iter = self.__hosts_store.get_iter(path)
-        self.__hosts_store.get_value(iter, 0)
+        if len(self.__hosts_store)>0:
+            iter = self.__hosts_store.get_iter(path)
+            self.__hosts_store.get_value(iter, 0)
 
     def __sort_type(self, treemodel, iter1, iter2):
         """
@@ -200,6 +201,17 @@ class ZionHostsList(gtk.ScrolledWindow):
         """
         """
         return 0
+    
+    def clear_hosts(self):
+        """
+        """
+        self.__hosts_store = gtk.ListStore(gtk.gdk.Pixbuf,
+                                           gobject.TYPE_STRING)
+        
+    def add_host(self, name, host_type=None):
+        """
+        """
+        self.__hosts_store.append([host_type,name])
 
 class ZionResultsPage(gtk.HPaned):
     """
@@ -253,6 +265,11 @@ class ZionResultsPage(gtk.HPaned):
         """
         """
         return self.__view
+    
+    def get_hosts_list(self):
+        """
+        """
+        return self.__list
 
 class ZionProfile(HIGVBox):
     """
@@ -287,6 +304,36 @@ class ZionProfileHoneyd(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
+        
+    def start(self):
+        """
+        """
+        z = zion.Zion(options.Options(), [])
+        
+        self.result.get_hosts_list().clear_hosts()
+        targets = []
+        
+        if address.recognize(self.target) == address.Unknown:
+            l = probe.get_addr_from_name(self.target)
+            for i in l:
+                try:
+                    targets.append(host.Host(i, self.target))
+                    host_str = '%s\n%s' % (i, self.target)
+                    self.result.get_hosts_list().add_host(host_str, PIXBUF_FIREWALL)
+                except:
+                    print "Unimplemented support to address: %s." % i
+        else:
+            targets.append(host.Host(self.target))
+            self.result.get_hosts_list().add_host(i, PIXBUF_FIREWALL)
+            
+        z.get_option_object().add("-c","wlan0")
+        z.get_option_object().add("--forge-addr","192.168.1.2")
+        
+        """for target in targets:
+            if z.honeyd_detection(target):
+                print 'target is honeyd'
+            else:
+                print 'target isnt honeyd'"""
 
 
 class ZionProfileOS(ZionProfile):

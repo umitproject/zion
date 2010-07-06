@@ -24,14 +24,14 @@
 import random
 from math import sqrt
 
-from umit.clann import som
+from umit.clann import som, matrix
 from umit.zion.core import options, host
 from umit.zion.scan import sniff, portscan, forge
 
 FORGE_FILTER = 'src host %s and src port %s and dst host %s and dst port %s'
 AMOUNT_OS_DETECTION = 2000
 AMOUNT_HONEYD_DETECTION = 25
-SEND_INTERVAL = 0.02
+SEND_INTERVAL = 0.1
 
 class Zion(object):
     """
@@ -202,7 +202,6 @@ class Zion(object):
             Rt = self.calculate_PRNG()
             
             print 'Creating attractors'
-            self.__som = som.new(10,(30,30))
             self.__classification(Rt)
                 
         elif self.__option.has(options.OPTION_CAPTURE):
@@ -290,11 +289,23 @@ class Zion(object):
                 
         self.__attractors = []
                 
+        # normalize results
+        max_val = max(Rt)
+        min_val = min(Rt)
+        ratio = 2/(max_val-min_val)
+        
+        self.__som = som.new(10,(30,30))
+        self.__matrix = matrix.new(len(Rt)-1,2)
+        
         for i in range(len(Rt)-1):
-            self.__attractors.append((Rt[i+1],Rt[i]))
-         
+            x = (Rt[i+1]-min_val)*ratio-1
+            y = (Rt[i]-min_val)*ratio-1
+            self.__attractors.append((x, y))
+            matrix.set(self.__matrix, i, 0, x)
+            matrix.set(self.__matrix, i, 1, y)
+            
         # TODO: confirm how train works
-        #som.train(self.__som, matrix, 1800)
+        som.train(self.__som, self.__matrix, 1800)
 
         
     def get_attractors(self):
