@@ -21,6 +21,7 @@
 
 import gtk
 import gobject
+import netifaces
 
 from higwidgets.higframe import HIGFrameRNet
 from higwidgets.higboxes import HIGVBox, HIGHBox
@@ -31,6 +32,7 @@ from umit.core.UmitConf import ProfileNotFound, Profile
 from umit.core.Paths import Path
 from umit.core.UmitLogging import log
 from umit.core.I18N import _
+from umit.umpa.sniffing.libpcap import pypcap
 
 from umit.gui.ScanOpenPortsPage import ScanOpenPortsPage
 
@@ -326,8 +328,10 @@ class ZionProfileHoneyd(ZionProfile):
             targets.append(host.Host(self.target))
             self.result.get_hosts_list().add_host(i, PIXBUF_FIREWALL)
             
-        z.get_option_object().add("-c","wlan0")
-        z.get_option_object().add("--forge-addr","192.168.1.4")
+        device = get_default_device()
+        saddr = get_ip_address(device)
+        z.get_option_object().add("-c",device)
+        z.get_option_object().add("--forge-addr",saddr)
         
         for target in targets:
             if z.honeyd_detection(target):
@@ -361,11 +365,11 @@ class ZionProfileOS(ZionProfile):
         else:
             z.append_target(host.Host(self.target))      
         
-        
-        # TODO: get default device and default forge address
-        z.get_option_object().add("-c","wlan0")
+        device = get_default_device()
+        saddr = get_ip_address(device)
+        z.get_option_object().add("-c",device)
         z.get_option_object().add("-d")
-        z.get_option_object().add("--forge-addr","192.168.1.4")
+        z.get_option_object().add("--forge-addr",saddr)
         z.run()
         
         # update host information
@@ -430,8 +434,10 @@ class ZionProfileSYNProxy(ZionProfile):
             targets.append(host.Host(self.target))
             self.result.get_hosts_list().add_host(i, PIXBUF_FIREWALL)
             
-        z.get_option_object().add("-c","wlan0")
-        z.get_option_object().add("--forge-addr","192.168.1.4")
+        device = get_default_device()
+        saddr = get_ip_address(device)
+        z.get_option_object().add("-c",device)
+        z.get_option_object().add("--forge-addr",saddr)
         
         for target in targets:
             if z.synproxy_detection(target):
@@ -542,3 +548,21 @@ def get_port_info(port):
             status,
             port.service,
             '')
+
+def get_default_device():
+    """
+    If any default device is available in options use that, otherwise,
+    Return the first (default) network device, which is usually 'eth0' under
+    Linux and Windows and varies under BSD.
+
+    @return: name of the first device.
+    """
+
+    # TODO: read device from options
+    device = "wlan0"
+    #device = netifaces.interfaces()[0]
+    return device
+
+def get_ip_address(interface):
+    """ Return the ip address of the specified interface """
+    return netifaces.ifaddresses(interface)[netifaces.AF_INET][0]['addr']
