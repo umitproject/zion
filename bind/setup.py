@@ -29,7 +29,8 @@ som_module = Extension('som',
                        extra_objects = ['../code/som.o',
                                         '../code/clann.o',
                                         '../code/metric.o',
-                                        '../code/matrix.o'],
+                                        '../code/matrix.o',
+                                        '../code/function.o'],
                        extra_compile_args = ['-Wall', '-ggdb'],
                        sources = ['som.c'])
 

@@ -111,7 +111,7 @@ get(PyObject *self, PyObject *args)
     /**
      * Convert output
      */
-    return PyCObject_FromVoidPtr(n, (void *) delete_matrix);
+    return PyCObject_FromVoidPtr(n, NULL);
 }
 
 PyObject*
@@ -141,6 +141,105 @@ train(PyObject *self, PyObject *args)
     }
 
     som_training(a, n, i);
+
+    /**
+     * Convert output
+     */
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+PyObject*
+classification(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *s = NULL,
+             *m = NULL;
+    unsigned int metric, method, i, j;
+    float limit_aux;
+    struct matrix ba, pa;
+    clann_type limit;
+
+
+    if (!PyArg_ParseTuple(args, "OOfI", &s, &m, &limit_aux, &method))
+        return NULL;
+
+    limit = (clann_type) limit_aux;
+
+    /**
+     * Call the function
+     */
+    struct matrix *b = (struct matrix *) PyCObject_AsVoidPtr(m);
+    struct som *a = (struct som *) PyCObject_AsVoidPtr(s);
+
+    if(method==1)
+    {
+
+        /* for hausdorff_limit only P and Pi are needed */
+        matrix_initialize(&pa, a->grid.weights.rows, a->grid.weights.cols);
+        matrix_initialize(&ba, b->rows, b->cols - 1);
+                
+        for (i = 0; i < a->grid.weights.rows; i++)
+        {
+            for (j = 0; j < a->grid.weights.cols - 1; j++)
+                *matrix_value(&pa, i, j) = *matrix_value(&a->grid.weights, i, j);
+            *matrix_value(&pa, i, a->grid.weights.cols-1) = a->grid.density[i];
+        }
+
+        for (i = 0; i < b->rows; i++)
+            for (j = 0; j < b->cols - 1; j++)
+                *matrix_value(&ba, i, j) = *matrix_value(b, i, j);
+                
+        metric = metric_hausdorff_limit_symmetric(&pa, &ba, limit);
+    }
+    else
+    {
+        matrix_initialize(&pa, a->grid.weights.rows, a->grid.weights.cols + 2);
+        
+        for (i = 0; i < a->grid.weights.rows; i++)
+            for (j = 0; j < a->grid.weights.cols - 1; j++)
+                *matrix_value(&pa, i, j) = *matrix_value(&(a->grid.weights), i, j);
+            *matrix_value(&pa, i, a->grid.weights.cols-1) = a->grid.density[i];
+            *matrix_value(&pa, i, a->grid.weights.cols) = a->grid.orientation[i];
+            
+        metric = metric_hausdorff_angle_symmetric(&pa, b, limit);
+    }
+    
+    /**
+     * Convert output
+     */
+    return Py_BuildValue("I", metric);
+}
+
+PyObject*
+caracterization(PyObject *self, PyObject *args)
+{
+    /**
+     * Convert input
+     */
+    PyObject *s = NULL,
+             *m = NULL;
+    unsigned int i;
+
+    if (!PyArg_ParseTuple(args, "OOI", &s, &m, &i))
+        return NULL;
+
+    /**
+     * Call the function
+     */
+    struct matrix *n = (struct matrix *) PyCObject_AsVoidPtr(m);
+    struct som *a = (struct som *) PyCObject_AsVoidPtr(s);
+
+    if (i < 1)
+    {
+        PyErr_SetString(PyExc_IndexError,
+                "number of iterations must be positive");
+        return NULL;
+    }
+
+    som_caracterization(a, n, i);
 
     /**
      * Convert output

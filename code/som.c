@@ -20,6 +20,12 @@
 
 #include "som.h"
 
+clann_type *z,
+           *o,
+           sz = 0.07,
+           so = 0.5,
+           r = 0.07;
+
 
 void
 som_initialize(struct som *ann,
@@ -75,6 +81,7 @@ som_training(struct som *ann,
 
     while (ann->epoch < epochs)
     {
+	printf("epoch: %d\n",ann->epoch);
         clann_shuffle(mess, x->rows);
 
         aux = CLANN_EXP(-((clann_type) ann->epoch / ann->const_2));
@@ -190,4 +197,130 @@ som_open(struct som *ann,
          const char *file)
 {
     return 0;
+}
+
+void
+som_caracterization(struct som *ann,
+             	   struct matrix *x,
+             	   unsigned int epochs)
+{
+    clann_type n_scale[2], z_scale[2];
+    unsigned int i, j;
+    clann_type d, cx, cy, *w, *t, *p, *a, *b;
+
+    ann->grid.orientation = malloc(sizeof(clann_type) * ann->grid.weights.rows);
+    ann->grid.density = malloc(sizeof(clann_type) * ann->grid.weights.rows);
+
+    for (i = 0; i < ann->grid.weights.rows; i++)
+    {
+        ann->grid.orientation[i] = 0;
+        ann->grid.density[i] = 0;
+    }
+
+    n_scale[MIN] = (clann_type) -1.0;
+    n_scale[MAX] = (clann_type)  1.0;
+
+    printf("Training SOM\n");
+    som_training(ann, x, epochs);
+
+    t = malloc(sizeof(clann_type) * ann->grid.weights.rows);
+
+    for (i = 0; i < ann->grid.weights.rows; i++)
+        t[i] = 0;
+
+    /**
+     * Density
+     */
+    printf("Calculating density\n");
+    for (i = 0; i < x->rows; i++)
+    {
+        p = matrix_value(x, i, 0);
+
+        z_scale[MIN] = (clann_type) INT_MAX;
+        z_scale[MAX] = (clann_type) - INT_MAX;
+
+        for (j = 0; j < ann->grid.weights.rows; j++)
+        {
+            w = matrix_value(&ann->grid.weights, j, 0);
+
+            d = CLANN_POW(metric_euclidean(p, w, 2), 2.0);
+            d = function_green_gaussian(&sz, &d);
+
+            t[j] += d;
+
+            if (t[j] < z_scale[MIN])
+                z_scale[MIN] = t[j];
+
+            if (t[j] > z_scale[MAX])
+                z_scale[MAX] = t[j];
+        }
+
+        for (j = 0; j < ann->grid.weights.rows; j++)
+            ann->grid.density[j] = metric_scale(t[j], z_scale, n_scale);
+    }
+
+    /**
+     * Orientation
+     */
+    printf("Calculating orientation\n");
+    for (j = 0; j < ann->grid.weights.rows; j++)
+    {
+        w = matrix_value(&ann->grid.weights, j, 0);
+
+        cx = 0;
+        cy = 0;
+
+        for (i = 0; i < x->rows - 1; i++)
+        {
+            a = matrix_value(x, i, 0);
+            b = matrix_value(x, i + 1, 0);
+
+            d = CLANN_POW(metric_euclidean(a, w, 2), 2.0);
+            d = function_green_gaussian(&so, &d);
+
+            cx += (b[X] - a[X]) * d;
+            cy += (b[Y] - a[Y]) * d;
+        }
+
+        ann->grid.orientation[j] = CLANN_ATAN2(cy, cx);
+    }
+
+    /**
+     * Normalization
+     */
+    printf("Normalization\n");
+    clann_type x_scale[2], y_scale[2];
+
+    x_scale[MIN] = (clann_type) INT_MAX;
+    x_scale[MAX] = (clann_type) - INT_MAX;
+    y_scale[MIN] = (clann_type) INT_MAX;
+    y_scale[MAX] = (clann_type) - INT_MAX;
+
+    for (j = 0; j < ann->grid.weights.rows; j++)
+    {
+        w = matrix_value(&ann->grid.weights, j, 0);
+
+        //if (z[j] < MIN_DENSITY)
+        //    continue;
+
+        if (w[X] < x_scale[MIN])
+            x_scale[MIN] = w[X];
+
+        if (w[X] > x_scale[MAX])
+            x_scale[MAX] = w[X];
+
+        if (w[Y] < y_scale[MIN])
+            y_scale[MIN] = w[Y];
+
+        if (w[Y] > y_scale[MAX])
+            y_scale[MAX] = w[Y];
+    }
+
+    for (j = 0; j < ann->grid.weights.rows; j++)
+    {
+        w = matrix_value(&ann->grid.weights, j, 0);
+
+        w[X] = metric_scale(w[X], x_scale, n_scale);
+        w[Y] = metric_scale(w[Y], y_scale, n_scale);
+    }
 }

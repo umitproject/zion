@@ -62,12 +62,30 @@ train(PyObject *self, PyObject *args);
 /**
  *
  */
+static char caracterization__doc__[] = "Start training SOM and fingerpriting";
+
+static PyObject*
+caracterization(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
+static char classification__doc__[] = "Database matching";
+
+static PyObject*
+classification(PyObject *self, PyObject *args);
+
+/**
+ *
+ */
 static PyMethodDef SOMMethods[] =
 {
     {"size", size, METH_VARARGS, size__doc__},
     {"new", new, METH_VARARGS, new__doc__},
     {"get", get, METH_VARARGS, get__doc__},
     {"train", train, METH_VARARGS, train__doc__},
+    {"caracterization", caracterization, METH_VARARGS, caracterization__doc__},
+    {"classification", classification, METH_VARARGS, classification__doc__},
     {NULL, NULL, 0, NULL}
 };
 

@@ -31,6 +31,15 @@
 #include "metric.h"
 #include "reader.h"
 #include "clann.h"
+#include "function.h"
+
+#define MAX         0
+#define MIN         1
+
+#define X           0
+#define Y           1
+
+#define MIN_DENSITY -0.8
 
 
 /**
@@ -41,6 +50,8 @@ struct som_grid
     unsigned int x_len;
     unsigned int y_len;
     struct matrix weights;
+    clann_type *density;
+    clann_type *orientation;
 };
 
 struct som
@@ -78,6 +89,14 @@ inline void
 som_training(struct som *ann,
              struct matrix *x,
              unsigned int epochs);
+
+/**
+ *
+ */
+inline void
+som_caracterization(struct som *ann,
+              	    struct matrix *x,
+                    unsigned int epochs);
 
 /**
  *
