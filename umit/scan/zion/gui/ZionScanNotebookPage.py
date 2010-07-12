@@ -22,6 +22,7 @@
 import gtk
 import gobject
 import netifaces
+import thread
 
 from higwidgets.higframe import HIGFrameRNet
 from higwidgets.higboxes import HIGVBox, HIGHBox
@@ -42,10 +43,14 @@ from umit.zion.core import address, options, zion, host
 from umit.zion.core.host import PORT_STATE_OPEN
 
 ICON_DIR = 'share/pixmaps/zion/'
+ICON_DIR_UMIT = 'share/pixmaps/umit/'
 
 PIXBUF_FIREWALL = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'firewall.png')
 PIXBUF_SYNPROXY = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'shield.png')
 PIXBUF_HONEYD = gtk.gdk.pixbuf_new_from_file(ICON_DIR + 'honey.png')
+PIXBUF_UNKNOWN = gtk.gdk.pixbuf_new_from_file(ICON_DIR_UMIT + 'unknown_32.png')
+
+SCANNING = _("Scanning")
 
 class ZionHostsView(gtk.Notebook):
     """
@@ -70,8 +75,8 @@ class ZionHostsView(gtk.Notebook):
         self.open_ports = ScanOpenPortsPage()
 
         self.append_page(self.__scans_page, gtk.Label(_('Scans')))
-        self.append_page(self.__ports_page, gtk.Label(_('Ports')))
         self.append_page(self.__ident_page, gtk.Label(_('Identification')))
+        self.append_page(self.__ports_page, gtk.Label(_('Ports')))
         
         self.__ports_page.add(self.open_ports)
         
@@ -82,6 +87,11 @@ class ZionHostsView(gtk.Notebook):
         """
         """
         return self.__ident_page
+    
+    def get_scans_page(self):
+        """
+        """
+        return self.__scans_page
 
 class ZionScansPage(HIGVBox):
     """
@@ -90,6 +100,42 @@ class ZionScansPage(HIGVBox):
         """
         """
         HIGVBox.__init__(self)
+        
+        # Creating widgets
+        self.__create_widgets()
+        
+        # Setting scrolled window
+        self.__set_scrolled_window()
+        
+        # Setting text view
+        self.__set_text_view()
+        
+        # Getting text buffer
+        self.text_buffer = self.text_view.get_buffer()
+        
+        # Adding widgets to the VPaned
+        self._pack_expand_fill(self.scrolled)
+        
+    def __create_widgets (self):
+        # Creating widgets
+        self.scrolled = gtk.ScrolledWindow()
+        self.text_view = gtk.TextView()
+        
+    def __set_scrolled_window(self):
+        # By default the vertical scroller remains at bottom
+        self._scroll_at_bottom = True
+
+        # Seting scrolled window
+        self.scrolled.set_border_width(5)
+        self.scrolled.add(self.text_view)
+        self.scrolled.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        
+    def __set_text_view(self):
+        self.text_view.set_wrap_mode(gtk.WRAP_WORD)
+        self.text_view.set_editable(False)
+        
+    def write(self, text):
+        self.text_buffer.insert(self.text_buffer.get_end_iter(), text)
 
 class ZionPortsPage(HIGVBox):
     """
@@ -148,8 +194,7 @@ class ZionHostsList(gtk.ScrolledWindow):
         self.__cell_text = gtk.CellRendererText()
         self.__cell_pixbuf = gtk.CellRendererPixbuf()
 
-        self.__hosts_store = gtk.ListStore(gtk.gdk.Pixbuf,
-                                           gobject.TYPE_STRING)
+        self.__hosts_store = gtk.ListStore(gtk.gdk.Pixbuf, str)
 
         self.__hosts_treeview = gtk.TreeView(self.__hosts_store)
         self.__hosts_treeview.connect('cursor-changed', self.__cursor_callback)
@@ -162,13 +207,6 @@ class ZionHostsList(gtk.ScrolledWindow):
         self.__column_host = gtk.TreeViewColumn(_('Host'),
                                                 self.__cell_text,
                                                 text=1)
-
-        """self.__hosts_store.append([PIXBUF_FIREWALL,
-            'firewall.example.com\n192.0.2.1'])
-        self.__hosts_store.append([PIXBUF_SYNPROXY,
-            'synproxy.example.com\n192.0.2.2'])
-        self.__hosts_store.append([PIXBUF_HONEYD,
-            'honeyd.example.com\n192.0.2.3'])"""
 
         self.__column_type.set_reorderable(True)
         self.__column_type.set_resizable(False)
@@ -207,13 +245,15 @@ class ZionHostsList(gtk.ScrolledWindow):
     def clear_hosts(self):
         """
         """
-        self.__hosts_store = gtk.ListStore(gtk.gdk.Pixbuf,
-                                           gobject.TYPE_STRING)
+        for i in range(len(self.__hosts_store)):
+            iter = self.__hosts_store.get_iter_root()
+            del(self.__hosts_store[iter])
         
     def add_host(self, name, host_type=None):
         """
         """
         self.__hosts_store.append([host_type,name])
+        pass
 
 class ZionResultsPage(gtk.HPaned):
     """
@@ -354,23 +394,33 @@ class ZionProfileOS(ZionProfile):
         z = zion.Zion(options.Options(), [])
         
         self.result.clear_port_list()
-                
+        
+        # clear previous hosts in the list
+        self.result.get_hosts_list().clear_hosts()
+        
+        # verify address to scan
         if address.recognize(self.target) == address.Unknown:
             l = probe.get_addr_from_name(self.target)
             for i in l:
                 try:
                     z.append_target(host.Host(i, self.target))
+                    host_str = '%s\n%s' % (i, self.target)
                 except:
                     print "Unimplemented support to address: %s." % i
         else:
-            z.append_target(host.Host(self.target))      
-        
+            z.append_target(host.Host(self.target))
+            self.result.get_hosts_list().add_host(self.target)
+            
+        self.result.get_hosts_list().add_host(host_str)
+
+        # configure zion options
         device = get_default_device()
         saddr = get_ip_address(device)
         z.get_option_object().add("-c",device)
         z.get_option_object().add("-d")
         z.get_option_object().add("--forge-addr",saddr)
         z.run()
+        #z.start()
         
         # update host information
         self.result.update_host_info(z.get_target_list()[0])
@@ -559,7 +609,7 @@ def get_default_device():
     """
 
     # TODO: read device from options
-    device = "wlan0"
+    device = "eth0"
     #device = netifaces.interfaces()[0]
     return device
 

@@ -23,19 +23,28 @@
 
 import random
 import time
+import thread, threading
+import sqlite3
+import sys
+import json
+import cPickle
 from math import sqrt
 
 from umit.clann import som, matrix
-from umit.zion.core import options, host
+from umit.zion.core import options, host, pmatrix
 from umit.zion.scan import sniff, portscan, forge
 
 FORGE_FILTER = 'src host %s and src port %s and dst host %s and dst port %s'
-AMOUNT_OS_DETECTION = 2000
+AMOUNT_OS_DETECTION = 50
 AMOUNT_HONEYD_DETECTION = 25
 SEND_INTERVAL = 0.1
 SYNPROXY_INTERVAL = 1
+METHOD_ALPHA = 1
+METHOD_BETA = 2
+EPOCHS = 500#1800
+ALPHA_LIMIT = 0.1
 
-class Zion(object):
+class Zion(threading.Thread):
     """
     """
     def __init__(self, option, target=[]):
@@ -45,6 +54,7 @@ class Zion(object):
         self.__target = target
         self.__capture_result = []
         self.__attractors = []
+        threading.Thread.__init__ (self)
 
     def get_option_object(self):
         """
@@ -172,7 +182,6 @@ class Zion(object):
     def run(self):
         """
         """
-        self.synproxy_detection(self.__target[0])
         if self.__option.has(options.OPTION_HELP):
 
             print options.HELP_TEXT
@@ -214,6 +223,9 @@ class Zion(object):
             
             print 'Creating attractors'
             self.__classification(Rt)
+            
+            print 'Matching'
+            return self.__matching()
                 
         elif self.__option.has(options.OPTION_CAPTURE):
 
@@ -299,11 +311,6 @@ class Zion(object):
         self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
         isn3 = self.__capture_result[0][1]
         
-        print 'isns:'
-        print isn1
-        print isn2
-        print isn3
-        
         if isn1!=isn2 and isn1==isn3:
             return True
         else:
@@ -350,21 +357,48 @@ class Zion(object):
         min_val = min(Rt)
         ratio = 2/(max_val-min_val)
         
-        self.__som = som.new(10,(30,30))
+        self.__som = som.new(2,(30,30))
         self.__matrix = matrix.new(len(Rt)-1,2)
-        
+                
         for i in range(len(Rt)-1):
-            x = (Rt[i+1]-min_val)*ratio-1
-            y = (Rt[i]-min_val)*ratio-1
+            x = Rt[i+1]
+            y = Rt[i]
             self.__attractors.append((x, y))
             matrix.set(self.__matrix, i, 0, x)
             matrix.set(self.__matrix, i, 1, y)
 
-        # TODO: confirm how train works
-        som.train(self.__som, self.__matrix, 1800)        
-
+        som.caracterization(self.__som, self.__matrix, EPOCHS)
+    
+    def __matching(self):
+        """
+        Match fingerprint with database
+        """
+        dmin = sys.maxint
+        id_min = None
+        
+        conn = sqlite3.connect('umit/zion/db/db.sqlite')
+        c = conn.cursor()
+        c.execute('SELECT software.pk, s_attractor.fp FROM software INNER JOIN fingerprint ON software.pk = fingerprint.fk_software INNER JOIN s_attractor ON s_attractor.pk = fingerprint.fk_sig1')
+        
+        for fingerprint in c:
+            attractor = cPickle.loads(str(fingerprint[1]))
+            base = attractor.convert()
+            d = som.classification(self.__som, base, ALPHA_LIMIT, METHOD_ALPHA)
+            if d < dmin:
+                dmin = d
+                id_min = fingerprint[0]
+                        
+        details = None
+        if id_min!=None:
+            for vendor_name, os_name, os_version in c.execute('SELECT vendor.name, name.name, name.version FROM software INNER JOIN vendor ON software.fk_vendor = vendor.pk INNER JOIN name ON software.fk_name = name.pk WHERE software.pk = ?',(id_min,)):
+                details = {'vendor_name': vendor_name, 'os_name': os_name, 'os_version': os_version, 'metric': dmin}
+                print 'Vendor name: %s\nOS name: %s\nOS version: %s\nMetric: %d' % (vendor_name, os_name, os_version, dmin)
+        else:
+            print 'no fingerprints available in database'
+        
+        return details
         
     def get_attractors(self):
-        """
-        """
+        """ Return the list of attractors. """
         return self.__attractors
+    
