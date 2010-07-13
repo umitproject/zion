@@ -56,6 +56,8 @@ OPTION_FORGE = 9
 OPTION_FORGE_ADDR = 10
 OPTION_SEND_INTERVAL = 11
 OPTION_HELP = 12
+OPTION_HONEYD = 13
+OPTION_SYNPROXY = 14
 
 FORGE_MODE_SYN = 'syn'
 
@@ -76,9 +78,11 @@ OPTIONS = {'-h':                OPTION_HELP,
            '--forge-addr':      OPTION_FORGE_ADDR,
            '-i':                OPTION_SEND_INTERVAL,
            '-d':                OPTION_DETECT,
-           '--detect':          OPTION_DETECT}
+           '--detect':          OPTION_DETECT,
+           '-y':                OPTION_SYNPROXY,
+           '-n':                OPTION_HONEYD}
 
-OPTIONS_SHORT = 'c:i:p:f:svhd'
+OPTIONS_SHORT = 'c:i:p:f:svhdyn'
 OPTIONS_LONG = ['capture=',
                 'capture-amount=',
                 'capture-filter=',

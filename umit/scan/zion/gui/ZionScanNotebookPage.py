@@ -39,7 +39,7 @@ from umit.gui.ScanOpenPortsPage import ScanOpenPortsPage
 
 from umit.scan.zion.gui.AttractorWidget import AttractorWidget
 from umit.zion.scan import probe
-from umit.zion.core import address, options, zion, host
+from umit.zion.core import address, options, zion, host, connector
 from umit.zion.core.host import PORT_STATE_OPEN
 
 ICON_DIR = 'share/pixmaps/zion/'
@@ -159,22 +159,43 @@ class ZionIdentificationPage(HIGVBox):
         """
         """
         self.__hbox = HIGHBox()
-        self.__info = gtk.Label(_('Information'))
+        self.__info = gtk.Label(_('No information available'))
         self.__attractor = AttractorWidget()
         self.__frame_attractor = HIGFrameRNet(_('Attractor'))
         self.__frame_attractor._add(self.__attractor)
+        
+        self.__table = gtk.Table(2, 2, False)
+        self.__table.set_col_spacings(3)
+        self.__table.set_row_spacings(3)
+        self.__table.attach(gtk.Label('Vendor:'), 0, 1, 0, 1)
+        self.vendor = gtk.Label('')
+        self.__table.attach(self.vendor, 1, 2, 0, 1)
+        self.__table.attach(gtk.Label('OS name:'), 0, 1, 1, 2)
+        self.os_name = gtk.Label('')
+        self.__table.attach(self.os_name, 1, 2, 1, 2)
 
         self.__hbox._pack_expand_fill(self.__info)
         self.__hbox._pack_noexpand_nofill(self.__frame_attractor)
-
+        
         self._pack_noexpand_nofill(self.__hbox)
+        self.pack_end(self.__table, True, True, 0)
         
     def update_attractors(self,attractors):
         """
+        Update the attractors at widget to plot them.
         """
         self.__attractor.update(attractors)
         
-
+    def update_os_info(self, info):
+        """
+        Update information about OS running on host.
+        """
+        print 'updated'
+        self.__info.set_text('Information:')
+        self.vendor.set_text(info['vendor_name'])
+        os = '%s %s' % (info['os_name'], info['os_version'])
+        self.os_name.set_text(os)
+        
 class ZionHostsList(gtk.ScrolledWindow):
     """
     """
@@ -325,6 +346,9 @@ class ZionProfile(HIGVBox):
         self.result = ZionResultsPage()
 
         self.pack_end(self.result)
+        
+        # signals needed to update info
+        self.connector = connector.Connector()
 
     def update_target(self, target):
         """
@@ -336,8 +360,34 @@ class ZionProfile(HIGVBox):
         """
         if self.target:
             return True
-
         return False
+    
+    def update_info(self, obj, text):
+        """
+        Update information page.
+        """
+        self.result.get_hosts_view().get_scans_page().write(text)
+        
+    def update_port_info(self, obj, host):
+        """
+        Update the port scan information of host.
+        """
+        self.result.update_host_info(host)
+        self.update_info(None, 'Obtaining TPC ISN samples\n')
+        
+    def update_attractors(self, obj, attractors):
+        """
+        Update the identification page with the graph of attractors
+        """
+        self.result.get_hosts_view().get_identification_page().update_attractors(attractors)
+        self.update_info(None, 'Building fingerprint\n')
+        
+    def update_host_information(self, obj, info):
+        """
+        Update information about OS running on host.
+        """
+        self.result.get_hosts_view().get_identification_page().update_os_info(info)
+        self.update_info(None, 'OS detection finished\n')
 
 class ZionProfileHoneyd(ZionProfile):
     """
@@ -350,7 +400,9 @@ class ZionProfileHoneyd(ZionProfile):
     def start(self):
         """
         """
-        z = zion.Zion(options.Options(), [])
+        self.connector.connect('scan_finished', self.update_port_info)
+        self.connector.connect('honeyd_finished', self.honeyd_finished)
+        self.connector.connect('update_status', self.update_info)
         
         self.result.get_hosts_list().clear_hosts()
         targets = []
@@ -361,24 +413,36 @@ class ZionProfileHoneyd(ZionProfile):
                 try:
                     targets.append(host.Host(i, self.target))
                     host_str = '%s\n%s' % (i, self.target)
-                    self.result.get_hosts_list().add_host(host_str, PIXBUF_FIREWALL)
+                    self.result.get_hosts_list().add_host(host_str)
                 except:
                     print "Unimplemented support to address: %s." % i
         else:
             targets.append(host.Host(self.target))
-            self.result.get_hosts_list().add_host(i, PIXBUF_FIREWALL)
+            self.result.get_hosts_list().add_host(i)
             
         device = get_default_device()
         saddr = get_ip_address(device)
-        z.get_option_object().add("-c",device)
-        z.get_option_object().add("--forge-addr",saddr)
+        
+        opts = options.Options()
+        opts.add("-c",device)
+        opts.add("--forge-addr",saddr)
+        # honeyd option
+        opts.add("-n")
+        
+        self.update_info(None, 'Honeyd Detection Started\n')
         
         for target in targets:
-            if z.honeyd_detection(target):
-                print 'target is honeyd'
-            else:
-                print 'target isnt honeyd'
-
+            z = zion.Zion(opts,  [target], self.connector)
+            z.start()
+            
+    def honeyd_finished(self, obj, result):
+        """
+        Write information about honeyd detection result
+        """
+        if result:
+            self.update_info(None, 'Target is honeyd\n')
+        else:
+            self.update_info(None, 'Target isnt honeyd\n')
 
 class ZionProfileOS(ZionProfile):
     """
@@ -388,10 +452,17 @@ class ZionProfileOS(ZionProfile):
         """
         ZionProfile.__init__(self, target)
         
+        self.connector.connect('scan_finished', self.update_port_info)
+        self.connector.connect('isn_samples_finished', self.update_info, 'Creating time series\n')
+        self.connector.connect('timeseries_created', self.update_info, 'Building attractors\n')
+        self.connector.connect('attractors_built', self.update_attractors)
+        self.connector.connect('fingerprint_finished', self.update_info, 'Performing OS fingerprint matching\n')
+        self.connector.connect('matching_finished', self.update_host_information)
+        
     def start(self):
         """
         """
-        z = zion.Zion(options.Options(), [])
+        z = zion.Zion(options.Options(), [], self.connector)
         
         self.result.clear_port_list()
         
@@ -405,30 +476,23 @@ class ZionProfileOS(ZionProfile):
                 try:
                     z.append_target(host.Host(i, self.target))
                     host_str = '%s\n%s' % (i, self.target)
+                    self.result.get_hosts_list().add_host(host_str)
                 except:
                     print "Unimplemented support to address: %s." % i
         else:
             z.append_target(host.Host(self.target))
             self.result.get_hosts_list().add_host(self.target)
             
-        self.result.get_hosts_list().add_host(host_str)
-
         # configure zion options
         device = get_default_device()
         saddr = get_ip_address(device)
         z.get_option_object().add("-c",device)
         z.get_option_object().add("-d")
         z.get_option_object().add("--forge-addr",saddr)
-        z.run()
-        #z.start()
+        z.start()
         
-        # update host information
-        self.result.update_host_info(z.get_target_list()[0])
-        
-        attractors = z.get_attractors()
-        
-        self.result.get_hosts_view().get_identification_page().update_attractors(attractors)
-
+        self.update_info(None, 'OS Detection Started\n')
+        self.update_info(None, 'Scanning host\n')
 
 class ZionProfilePrompt(ZionProfile):
     """
@@ -466,7 +530,9 @@ class ZionProfileSYNProxy(ZionProfile):
     def start(self):
         """
         """
-        z = zion.Zion(options.Options(), [])
+        self.connector.connect('scan_finished', self.update_port_info)
+        self.connector.connect('synproxy_finished', self.synproxy_finished)
+        self.connector.connect('update_status', self.update_info)
         
         self.result.get_hosts_list().clear_hosts()
         targets = []
@@ -477,23 +543,37 @@ class ZionProfileSYNProxy(ZionProfile):
                 try:
                     targets.append(host.Host(i, self.target))
                     host_str = '%s\n%s' % (i, self.target)
-                    self.result.get_hosts_list().add_host(host_str, PIXBUF_FIREWALL)
+                    self.result.get_hosts_list().add_host(host_str)
                 except:
                     print "Unimplemented support to address: %s." % i
         else:
             targets.append(host.Host(self.target))
-            self.result.get_hosts_list().add_host(i, PIXBUF_FIREWALL)
+            self.result.get_hosts_list().add_host(i)
             
         device = get_default_device()
         saddr = get_ip_address(device)
-        z.get_option_object().add("-c",device)
-        z.get_option_object().add("--forge-addr",saddr)
+        
+        opts = options.Options()
+        opts.add("-c",device)
+        opts.add("--forge-addr",saddr)
+        # synproxy option
+        opts.add("-y")
+        
+        self.update_info(None, 'Syn Proxy Detection Started\n')
         
         for target in targets:
-            if z.synproxy_detection(target):
-                print 'target is syn proxy'
-            else:
-                print 'target isnt syn proxy'
+            self.update_info(None, 'Scanning host\n')
+            z = zion.Zion(opts,  [target], self.connector)
+            z.start()
+            
+    def synproxy_finished(self, obj, result):
+        """
+        Write information about synproxy detection result
+        """
+        if result:
+            self.update_info(None, 'Target is synproxy\n')
+        else:
+            self.update_info(None, 'Target isnt synproxy\n')
                 
 
 PROFILE_CLASS = {'1': ZionProfileHoneyd,
@@ -609,7 +689,7 @@ def get_default_device():
     """
 
     # TODO: read device from options
-    device = "eth0"
+    device = "wlan0"
     #device = netifaces.interfaces()[0]
     return device
 

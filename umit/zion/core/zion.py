@@ -36,7 +36,7 @@ from umit.zion.scan import sniff, portscan, forge
 
 FORGE_FILTER = 'src host %s and src port %s and dst host %s and dst port %s'
 AMOUNT_OS_DETECTION = 50
-AMOUNT_HONEYD_DETECTION = 25
+AMOUNT_HONEYD_DETECTION = 5
 SEND_INTERVAL = 0.1
 SYNPROXY_INTERVAL = 1
 METHOD_ALPHA = 1
@@ -47,13 +47,14 @@ ALPHA_LIMIT = 0.1
 class Zion(threading.Thread):
     """
     """
-    def __init__(self, option, target=[]):
+    def __init__(self, option, target=[], connector=None):
         """
         """
         self.__option = option
         self.__target = target
         self.__capture_result = []
         self.__attractors = []
+        self.__connector = connector
         threading.Thread.__init__ (self)
 
     def get_option_object(self):
@@ -93,6 +94,8 @@ class Zion(threading.Thread):
 
         for target in self.__target:
             print target
+            
+        self.notify('scan_finished', self.__target[0])
             
     def do_capture(self, dev=None):
         """
@@ -185,8 +188,24 @@ class Zion(threading.Thread):
         if self.__option.has(options.OPTION_HELP):
 
             print options.HELP_TEXT
+            
+        elif self.__option.has(options.OPTION_SYNPROXY):
+            synproxy = self.synproxy_detection()
+            if synproxy==True:
+                print 'Target is synproxy'
+            else:
+                print 'Target isnt synproxy'
+            self.notify('synproxy_finished', synproxy)
+            
+        elif self.__option.has(options.OPTION_HONEYD):
+            honeyd = self.honeyd_detection()
+            if honeyd==False:
+                print 'Target isnt honeyd'
+            else:
+                print 'Target is honeyd'
+            self.notify('honeyd_finished', honeyd)
 
-        if self.__option.has(options.OPTION_FORGE):
+        elif self.__option.has(options.OPTION_FORGE):
 
             print
             print 'Getting packets'
@@ -217,15 +236,23 @@ class Zion(threading.Thread):
             
             print 'Capturing packets'
             self.do_forge()
+            
+            self.notify('isn_samples_finished')
 
             print 'Calculating PRNG'
             Rt = self.calculate_PRNG()
             
+            self.notify('timeseries_created')
+            
             print 'Creating attractors'
             self.__classification(Rt)
             
+            self.notify('fingerprint_finished')
+            
             print 'Matching'
-            return self.__matching()
+            result = self.__matching()
+        
+            self.notify('matching_finished', result)
                 
         elif self.__option.has(options.OPTION_CAPTURE):
 
@@ -239,13 +266,8 @@ class Zion(threading.Thread):
             print options.HELP_TEXT
             
             
-    def honeyd_detection(self,target):
-        """ Detect if target are an honeyd. """
-        
-        print 'start honeyd detection'
-        self.__target = []
-        self.append_target(target)
-        
+    def honeyd_detection(self):
+        """ Detect if target are an honeyd. """        
         # configure parameters for honeyd detection
         if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
             self.__option.add('--capture-amount',AMOUNT_HONEYD_DETECTION)
@@ -271,27 +293,30 @@ class Zion(threading.Thread):
             for k in incs:
                 if increments.count(k)==4:
                     return True
-
-            return False                
+            
+            return False
         else:
             return False
+            
 
         
-    def synproxy_detection(self, target):
+    def synproxy_detection(self):
         """ Detect if target is an syn proxy. """
-        
-        print 'start syn proxy detection'
-        self.__target = []
-        self.append_target(target)
-        
+                
         # configure parameters for honeyd detection
         if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
             self.__option.add('--capture-amount',1)
         self.__option.add('-f','syn')
         
+        self.notify('update_status','Searching for open ports\n')
+        
+        target = self.__target[0]
+        
         # search for open ports in target
         self.do_scan()
         ports = target.get_open_ports()
+        
+        self.notify('update_status','Generate random ports\n')
         
         origin_port1 = random.randint(1024, 65535)
         while True:
@@ -302,6 +327,7 @@ class Zion(threading.Thread):
         s = sniff.Sniff()
         addr = self.__option.get(options.OPTION_FORGE_ADDR)
         
+        self.notify('update_status','Sending packets\n')
         self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
         isn1 = self.__capture_result[0][1]
         time.sleep(SYNPROXY_INTERVAL)
@@ -315,7 +341,7 @@ class Zion(threading.Thread):
             return True
         else:
             return False
-
+        
             
     def calculate_PRNG(self):
         """ Calculate Pseudo Random Number Generator from ISN captured. """
@@ -366,6 +392,8 @@ class Zion(threading.Thread):
             self.__attractors.append((x, y))
             matrix.set(self.__matrix, i, 0, x)
             matrix.set(self.__matrix, i, 1, y)
+            
+        self.notify('attractors_built', self.__attractors)    
 
         som.caracterization(self.__som, self.__matrix, EPOCHS)
     
@@ -402,3 +430,12 @@ class Zion(threading.Thread):
         """ Return the list of attractors. """
         return self.__attractors
     
+    def notify(self, signal, param=None):
+        """
+        If a connector exists, emits the signal.
+        """
+        if self.__connector!=None:
+            if param==None:
+                self.__connector.emit(signal)
+            else:
+                self.__connector.emit(signal, param)
