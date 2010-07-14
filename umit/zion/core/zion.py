@@ -190,22 +190,32 @@ class Zion(threading.Thread):
             print options.HELP_TEXT
             
         elif self.__option.has(options.OPTION_SYNPROXY):
+            
+            self.notify('update_status', 'Syn Proxy Detection Started\n\n')
+            
             synproxy = self.synproxy_detection()
             if synproxy==True:
                 print 'Target is synproxy'
             else:
                 print 'Target isnt synproxy'
+                
             self.notify('synproxy_finished', synproxy)
             
         elif self.__option.has(options.OPTION_HONEYD):
+            
+            self.notify('update_status', 'Honeyd Detection Started\n')
+            
             honeyd = self.honeyd_detection()
             if honeyd==False:
                 print 'Target isnt honeyd'
             else:
                 print 'Target is honeyd'
+                
             self.notify('honeyd_finished', honeyd)
 
         elif self.__option.has(options.OPTION_FORGE):
+            
+            self.notify('update_status', 'Forge started\n')
 
             print
             print 'Getting packets'
@@ -215,6 +225,8 @@ class Zion(threading.Thread):
 
         elif self.__option.has(options.OPTION_SCAN):
 
+            self.notify('update_status', 'Scanning host\n')
+            
             print
             print 'TCP SYN port scan results'
             print '-------------------------'
@@ -222,6 +234,8 @@ class Zion(threading.Thread):
             self.do_scan()
                         
         elif self.__option.has(options.OPTION_DETECT):
+            
+            self.notify('update_status', 'OS Detection Started\n')
             
             print
             print 'OS Detection'

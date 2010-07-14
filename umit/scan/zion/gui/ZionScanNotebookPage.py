@@ -23,6 +23,7 @@ import gtk
 import gobject
 import netifaces
 import thread
+import getopt
 
 from higwidgets.higframe import HIGFrameRNet
 from higwidgets.higboxes import HIGVBox, HIGHBox
@@ -68,38 +69,30 @@ class ZionHostsView(gtk.Notebook):
         """
         """
         self.__scans_page = ZionScansPage()
-        #self.__ports_page = ZionPortsPage()
         self.__ports_page = HIGVBox()
-        self.__ident_page = ZionIdentificationPage()
         
         self.open_ports = ScanOpenPortsPage()
 
         self.append_page(self.__scans_page, gtk.Label(_('Scans')))
-        self.append_page(self.__ident_page, gtk.Label(_('Identification')))
         self.append_page(self.__ports_page, gtk.Label(_('Ports')))
         
         self.__ports_page.add(self.open_ports)
         
     def port_mode(self):
         self.open_ports.host.port_mode() 
-        
-    def get_identification_page(self):
-        """
-        """
-        return self.__ident_page
     
     def get_scans_page(self):
         """
         """
         return self.__scans_page
 
-class ZionScansPage(HIGVBox):
+class ZionScansPage(HIGHBox):
     """
     """
     def __init__(self):
         """
         """
-        HIGVBox.__init__(self)
+        HIGHBox.__init__(self)
         
         # Creating widgets
         self.__create_widgets()
@@ -113,13 +106,29 @@ class ZionScansPage(HIGVBox):
         # Getting text buffer
         self.text_buffer = self.text_view.get_buffer()
         
-        # Adding widgets to the VPaned
+        # Adding widgets
+        self.__boxalign = gtk.Alignment()
+        self.__boxalign.set_padding(8, 0, 0, 8)
+        self.__boxalign.add(self.__hbox)
         self._pack_expand_fill(self.scrolled)
+        self._pack_noexpand_nofill(self.__boxalign)
         
     def __create_widgets (self):
         # Creating widgets
         self.scrolled = gtk.ScrolledWindow()
         self.text_view = gtk.TextView()
+        
+        self.__hbox = HIGVBox()
+        self.__attractor = AttractorWidget()
+        self.__osinfo = gtk.Label()
+        self.__textalign = gtk.Alignment()
+        self.__textalign.add(self.__osinfo)
+        self.__textalign.set_padding(8, 0, 0, 8)
+        self.__frame_attractor = HIGFrameRNet(_('Attractor'))
+        self.__frame_attractor._add(self.__attractor)
+
+        self.__hbox._pack_noexpand_nofill(self.__frame_attractor)
+        self.__hbox._pack_noexpand_nofill(self.__textalign)
         
     def __set_scrolled_window(self):
         # By default the vertical scroller remains at bottom
@@ -136,49 +145,6 @@ class ZionScansPage(HIGVBox):
         
     def write(self, text):
         self.text_buffer.insert(self.text_buffer.get_end_iter(), text)
-
-class ZionPortsPage(HIGVBox):
-    """
-    """
-    def __init__(self):
-        """
-        """
-        HIGVBox.__init__(self)
-
-class ZionIdentificationPage(HIGVBox):
-    """
-    """
-    def __init__(self):
-        """
-        """
-        HIGVBox.__init__(self)
-
-        self.__create_widgets()
-
-    def __create_widgets(self):
-        """
-        """
-        self.__hbox = HIGHBox()
-        self.__info = gtk.Label(_('No information available'))
-        self.__attractor = AttractorWidget()
-        self.__frame_attractor = HIGFrameRNet(_('Attractor'))
-        self.__frame_attractor._add(self.__attractor)
-        
-        self.__table = gtk.Table(2, 2, False)
-        self.__table.set_col_spacings(3)
-        self.__table.set_row_spacings(3)
-        self.__table.attach(gtk.Label('Vendor:'), 0, 1, 0, 1)
-        self.vendor = gtk.Label('')
-        self.__table.attach(self.vendor, 1, 2, 0, 1)
-        self.__table.attach(gtk.Label('OS name:'), 0, 1, 1, 2)
-        self.os_name = gtk.Label('')
-        self.__table.attach(self.os_name, 1, 2, 1, 2)
-
-        self.__hbox._pack_expand_fill(self.__info)
-        self.__hbox._pack_noexpand_nofill(self.__frame_attractor)
-        
-        self._pack_noexpand_nofill(self.__hbox)
-        self.pack_end(self.__table, True, True, 0)
         
     def update_attractors(self,attractors):
         """
@@ -190,12 +156,16 @@ class ZionIdentificationPage(HIGVBox):
         """
         Update information about OS running on host.
         """
-        print 'updated'
-        self.__info.set_text('Information:')
-        self.vendor.set_text(info['vendor_name'])
-        os = '%s %s' % (info['os_name'], info['os_version'])
-        self.os_name.set_text(os)
+        str = 'Information:\nVendor: %s\nOS: %s %s' % (info['vendor_name'], info['os_name'], info['os_version'])
+        self.__osinfo.set_text(str)
         
+    def hide_attractor_box(self):
+        """
+        Hide the box containing the attractor widget.
+        """
+        self.remove(self.__boxalign)
+
+            
 class ZionHostsList(gtk.ScrolledWindow):
     """
     """
@@ -349,6 +319,18 @@ class ZionProfile(HIGVBox):
         
         # signals needed to update info
         self.connector = connector.Connector()
+        
+        self.connector.connect('scan_finished', self.update_port_info)
+        self.connector.connect('isn_samples_finished', self.update_info, 'Creating time series\n')
+        self.connector.connect('timeseries_created', self.update_info, 'Building attractors\n')
+        self.connector.connect('attractors_built', self.update_attractors)
+        self.connector.connect('fingerprint_finished', self.update_info, 'Performing OS fingerprint matching\n')
+        self.connector.connect('matching_finished', self.update_host_information)
+        self.connector.connect('honeyd_finished', self.honeyd_finished)
+        self.connector.connect('synproxy_finished', self.synproxy_finished)
+        self.connector.connect('update_status', self.update_info)
+        
+        self.result.get_hosts_view().set_current_page(0)
 
     def update_target(self, target):
         """
@@ -377,17 +359,35 @@ class ZionProfile(HIGVBox):
         
     def update_attractors(self, obj, attractors):
         """
-        Update the identification page with the graph of attractors
+        Update the scans page with the graph of attractors
         """
-        self.result.get_hosts_view().get_identification_page().update_attractors(attractors)
+        self.result.get_hosts_view().get_scans_page().update_attractors(attractors)
         self.update_info(None, 'Building fingerprint\n')
         
     def update_host_information(self, obj, info):
         """
         Update information about OS running on host.
         """
-        self.result.get_hosts_view().get_identification_page().update_os_info(info)
+        self.result.get_hosts_view().get_scans_page().update_os_info(info)
         self.update_info(None, 'OS detection finished\n')
+        
+    def honeyd_finished(self, obj, result):
+        """
+        Write information about honeyd detection result
+        """
+        if result:
+            self.update_info(None, 'Target is honeyd\n')
+        else:
+            self.update_info(None, 'Target isnt honeyd\n')
+            
+    def synproxy_finished(self, obj, result):
+        """
+        Write information about synproxy detection result
+        """
+        if result:
+            self.update_info(None, 'Target is synproxy\n')
+        else:
+            self.update_info(None, 'Target isnt synproxy\n')            
 
 class ZionProfileHoneyd(ZionProfile):
     """
@@ -396,14 +396,12 @@ class ZionProfileHoneyd(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
+        # remove attractor box
+        self.result.get_hosts_view().get_scans_page().hide_attractor_box()
         
     def start(self):
         """
-        """
-        self.connector.connect('scan_finished', self.update_port_info)
-        self.connector.connect('honeyd_finished', self.honeyd_finished)
-        self.connector.connect('update_status', self.update_info)
-        
+        """        
         self.result.get_hosts_list().clear_hosts()
         targets = []
         
@@ -428,21 +426,10 @@ class ZionProfileHoneyd(ZionProfile):
         opts.add("--forge-addr",saddr)
         # honeyd option
         opts.add("-n")
-        
-        self.update_info(None, 'Honeyd Detection Started\n')
-        
+                
         for target in targets:
             z = zion.Zion(opts,  [target], self.connector)
             z.start()
-            
-    def honeyd_finished(self, obj, result):
-        """
-        Write information about honeyd detection result
-        """
-        if result:
-            self.update_info(None, 'Target is honeyd\n')
-        else:
-            self.update_info(None, 'Target isnt honeyd\n')
 
 class ZionProfileOS(ZionProfile):
     """
@@ -451,13 +438,6 @@ class ZionProfileOS(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
-        
-        self.connector.connect('scan_finished', self.update_port_info)
-        self.connector.connect('isn_samples_finished', self.update_info, 'Creating time series\n')
-        self.connector.connect('timeseries_created', self.update_info, 'Building attractors\n')
-        self.connector.connect('attractors_built', self.update_attractors)
-        self.connector.connect('fingerprint_finished', self.update_info, 'Performing OS fingerprint matching\n')
-        self.connector.connect('matching_finished', self.update_host_information)
         
     def start(self):
         """
@@ -490,9 +470,6 @@ class ZionProfileOS(ZionProfile):
         z.get_option_object().add("-d")
         z.get_option_object().add("--forge-addr",saddr)
         z.start()
-        
-        self.update_info(None, 'OS Detection Started\n')
-        self.update_info(None, 'Scanning host\n')
 
 class ZionProfilePrompt(ZionProfile):
     """
@@ -504,20 +481,54 @@ class ZionProfilePrompt(ZionProfile):
 
         self.__command_hbox = HIGHBox()
         self.__command_label = gtk.Label(_('Command:'))
-        self.__command_entry = gtk.Entry()
+        self.command_entry = gtk.Entry()
 
         self.__command_hbox._pack_noexpand_nofill(self.__command_label)
-        self.__command_hbox._pack_expand_fill(self.__command_entry)
+        self.__command_hbox._pack_expand_fill(self.command_entry)
 
         self._pack_noexpand_nofill(self.__command_hbox)
 
     def check_scan(self):
         """
         """
-        if self.__command_entry.get_text().strip():
+        if self.command_entry.get_text().strip():
             return True
-
         return False
+    
+    def start(self):
+        """
+        """
+        zion_options = options.Options()
+        
+        # get command options
+        command = self.command_entry.get_text().strip()
+        try:
+            opts, addrs = getopt.gnu_getopt(command.split(),
+                    options.OPTIONS_SHORT,
+                    options.OPTIONS_LONG)
+        except getopt.GetoptError, e:
+            print 'Error: %s.' % e
+            
+        for o in opts:
+            opt, value = o
+            zion_options.add(opt, value)
+            
+        z = zion.Zion(zion_options, [])
+            
+        for a in addrs:
+            if address.recognize(a) == address.Unknown:
+                l = probe.get_addr_from_name(a)
+                for i in l:
+                    try:
+                        z.append_target(host.Host(i, a))
+                    except:
+                        print "Unimplemented support to address: %s." % i
+            else:
+                z.append_target(host.Host(a))
+        
+        # run command
+        z.run()
+        
 
 class ZionProfileSYNProxy(ZionProfile):
     """
@@ -529,11 +540,7 @@ class ZionProfileSYNProxy(ZionProfile):
         
     def start(self):
         """
-        """
-        self.connector.connect('scan_finished', self.update_port_info)
-        self.connector.connect('synproxy_finished', self.synproxy_finished)
-        self.connector.connect('update_status', self.update_info)
-        
+        """        
         self.result.get_hosts_list().clear_hosts()
         targets = []
         
@@ -558,23 +565,10 @@ class ZionProfileSYNProxy(ZionProfile):
         opts.add("--forge-addr",saddr)
         # synproxy option
         opts.add("-y")
-        
-        self.update_info(None, 'Syn Proxy Detection Started\n')
-        
+                
         for target in targets:
-            self.update_info(None, 'Scanning host\n')
             z = zion.Zion(opts,  [target], self.connector)
             z.start()
-            
-    def synproxy_finished(self, obj, result):
-        """
-        Write information about synproxy detection result
-        """
-        if result:
-            self.update_info(None, 'Target is synproxy\n')
-        else:
-            self.update_info(None, 'Target isnt synproxy\n')
-                
 
 PROFILE_CLASS = {'1': ZionProfileHoneyd,
                  '2': ZionProfileOS,
@@ -607,6 +601,8 @@ class ZionScanNotebookPage(gtk.Alignment):
 
             if type(self.get_child()) == ZionProfilePrompt:
                 self.page.toolbar.target_entry.set_sensitive(False)
+                self.get_child().command_entry.connect('changed',
+                    lambda x: self.page.toolbar.scan_button.set_sensitive(True))
             else:
                 self.page.toolbar.target_entry.set_sensitive(True)
 
