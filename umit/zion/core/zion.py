@@ -123,7 +123,7 @@ class Zion(threading.Thread):
         except KeyboardInterrupt:
             pass
 
-    def do_forge(self):
+    def do_forge(self, fields=None):
         """
         """
         mode = self.__option.get(options.OPTION_FORGE)
@@ -134,6 +134,9 @@ class Zion(threading.Thread):
 
         if mode == options.FORGE_MODE_SYN:
             self.do_scan()
+            
+            if fields!=None:
+                s.fields = fields
 
             for t in self.__target:
 
@@ -155,7 +158,6 @@ class Zion(threading.Thread):
         if amount:
             s.amount = int(amount)
 
-        s.fields = ['tcp.seq']
         s.filter = FORGE_FILTER % (target.get_addr().addr, target_port,
                 addr, port)
         packet = forge.Packet(options.FORGE_MODE_SYN,
@@ -188,6 +190,42 @@ class Zion(threading.Thread):
         if self.__option.has(options.OPTION_HELP):
 
             print options.HELP_TEXT
+            
+        elif self.__option.has(options.OPTION_DETECT):
+            
+            self.notify('update_status', 'OS Detection Started\n')
+            
+            print
+            print 'OS Detection'
+            print '------------'
+            
+            # configure parameters for OS detection
+            if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
+                self.__option.add('--capture-amount',AMOUNT_OS_DETECTION)
+            if not self.__option.has(options.OPTION_SEND_INTERVAL):
+                self.__option.add('-i',SEND_INTERVAL)                
+            self.__option.add('-f','syn')
+            
+            print 'Capturing packets'
+            self.do_forge(['tcp.seq'])
+            
+            self.notify('isn_samples_finished')
+
+            print 'Calculating PRNG'
+            Rt = self.calculate_PRNG()
+            
+            self.notify('timeseries_created')
+            
+            print 'Creating attractors'
+            self.__classification(Rt)
+            
+            self.notify('fingerprint_finished')
+            
+            print 'Matching'
+            result = self.__matching()
+        
+            self.notify('matching_finished', result)
+            
             
         elif self.__option.has(options.OPTION_SYNPROXY):
             
@@ -232,41 +270,6 @@ class Zion(threading.Thread):
             print '-------------------------'
 
             self.do_scan()
-                        
-        elif self.__option.has(options.OPTION_DETECT):
-            
-            self.notify('update_status', 'OS Detection Started\n')
-            
-            print
-            print 'OS Detection'
-            print '------------'
-            
-            # configure parameters for OS detection
-            if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
-                self.__option.add('--capture-amount',AMOUNT_OS_DETECTION)
-            if not self.__option.has(options.OPTION_SEND_INTERVAL):
-                self.__option.add('-i',SEND_INTERVAL)                
-            self.__option.add('-f','syn')
-            
-            print 'Capturing packets'
-            self.do_forge()
-            
-            self.notify('isn_samples_finished')
-
-            print 'Calculating PRNG'
-            Rt = self.calculate_PRNG()
-            
-            self.notify('timeseries_created')
-            
-            print 'Creating attractors'
-            self.__classification(Rt)
-            
-            self.notify('fingerprint_finished')
-            
-            print 'Matching'
-            result = self.__matching()
-        
-            self.notify('matching_finished', result)
                 
         elif self.__option.has(options.OPTION_CAPTURE):
 
@@ -287,7 +290,7 @@ class Zion(threading.Thread):
             self.__option.add('--capture-amount',AMOUNT_HONEYD_DETECTION)
         self.__option.add('-f','syn')
                 
-        self.do_forge()
+        self.do_forge(['tcp.seq'])
         Rt = self.calculate_PRNG()
         
         if len(Rt) > 0:
@@ -342,6 +345,7 @@ class Zion(threading.Thread):
         addr = self.__option.get(options.OPTION_FORGE_ADDR)
         
         self.notify('update_status','Sending packets\n')
+        s.fields = ['tcp.seq']
         self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
         isn1 = self.__capture_result[0][1]
         time.sleep(SYNPROXY_INTERVAL)

@@ -144,7 +144,16 @@ class ZionScansPage(HIGHBox):
         self.text_view.set_editable(False)
         
     def write(self, text):
+        """
+        Write text to output box.
+        """
         self.text_buffer.insert(self.text_buffer.get_end_iter(), text)
+        
+    def clean(self):
+        """
+        Clear all text in output box.
+        """
+        self.text_buffer.set_text('')
         
     def update_attractors(self,attractors):
         """
@@ -164,6 +173,13 @@ class ZionScansPage(HIGHBox):
         Hide the box containing the attractor widget.
         """
         self.remove(self.__boxalign)
+        
+    def show_attractor_box(self):
+        """
+        Show the box containing the attractor widget.
+        """
+        self._pack_noexpand_nofill(self.__boxalign)
+        self.show_all()
 
             
 class ZionHostsList(gtk.ScrolledWindow):
@@ -355,7 +371,7 @@ class ZionProfile(HIGVBox):
         Update the port scan information of host.
         """
         self.result.update_host_info(host)
-        self.update_info(None, 'Obtaining TPC ISN samples\n')
+        self.update_info(None, 'Host scanning finished\n')
         
     def update_attractors(self, obj, attractors):
         """
@@ -444,6 +460,7 @@ class ZionProfileOS(ZionProfile):
         """
         z = zion.Zion(options.Options(), [], self.connector)
         
+        self.result.get_hosts_view().get_scans_page().clean()
         self.result.clear_port_list()
         
         # clear previous hosts in the list
@@ -478,6 +495,9 @@ class ZionProfilePrompt(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
+        
+        # hide attractor box
+        self.result.get_hosts_view().get_scans_page().hide_attractor_box()
 
         self.__command_hbox = HIGHBox()
         self.__command_label = gtk.Label(_('Command:'))
@@ -513,7 +533,11 @@ class ZionProfilePrompt(ZionProfile):
             opt, value = o
             zion_options.add(opt, value)
             
-        z = zion.Zion(zion_options, [])
+        # hide attractor box if not needed
+        if zion_options.has(options.OPTION_DETECT) or zion_options.has(options.OPTION_SYNPROXY):
+            self.result.get_hosts_view().get_scans_page().show_attractor_box()
+            
+        z = zion.Zion(zion_options, [], self.connector)
             
         for a in addrs:
             if address.recognize(a) == address.Unknown:
@@ -526,8 +550,8 @@ class ZionProfilePrompt(ZionProfile):
             else:
                 z.append_target(host.Host(a))
         
-        # run command
-        z.run()
+        # run zion
+        z.start()
         
 
 class ZionProfileSYNProxy(ZionProfile):
