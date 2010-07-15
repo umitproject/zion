@@ -139,3 +139,4 @@ class Plot(gtk.DrawingArea):
         """
         """
         self.__input = input
+        self.__draw_content(self)

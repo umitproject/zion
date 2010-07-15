@@ -24,6 +24,7 @@ import gobject
 import netifaces
 import thread
 import getopt
+from multiprocessing import Process, Queue
 
 from higwidgets.higframe import HIGFrameRNet
 from higwidgets.higboxes import HIGVBox, HIGHBox
@@ -40,7 +41,7 @@ from umit.gui.ScanOpenPortsPage import ScanOpenPortsPage
 
 from umit.scan.zion.gui.AttractorWidget import AttractorWidget
 from umit.zion.scan import probe
-from umit.zion.core import address, options, zion, host, connector
+from umit.zion.core import address, options, zion, host
 from umit.zion.core.host import PORT_STATE_OPEN
 
 ICON_DIR = 'share/pixmaps/zion/'
@@ -332,21 +333,14 @@ class ZionProfile(HIGVBox):
         self.result = ZionResultsPage()
 
         self.pack_end(self.result)
-        
-        # signals needed to update info
-        self.connector = connector.Connector()
-        
-        self.connector.connect('scan_finished', self.update_port_info)
-        self.connector.connect('isn_samples_finished', self.update_info, 'Creating time series\n')
-        self.connector.connect('timeseries_created', self.update_info, 'Building attractors\n')
-        self.connector.connect('attractors_built', self.update_attractors)
-        self.connector.connect('fingerprint_finished', self.update_info, 'Performing OS fingerprint matching\n')
-        self.connector.connect('matching_finished', self.update_host_information)
-        self.connector.connect('honeyd_finished', self.honeyd_finished)
-        self.connector.connect('synproxy_finished', self.synproxy_finished)
-        self.connector.connect('update_status', self.update_info)
-        
         self.result.get_hosts_view().set_current_page(0)
+        
+        # construct communication queues
+        self.q1 = Queue()
+        self.q2 = Queue()
+        fd = self.q2._reader.fileno()
+        # observe received messages in queue
+        gobject.io_add_watch(fd, gobject.IO_IN, self.update)
 
     def update_target(self, target):
         """
@@ -360,50 +354,69 @@ class ZionProfile(HIGVBox):
             return True
         return False
     
-    def update_info(self, obj, text):
+    def update_info(self, text):
         """
         Update information page.
         """
         self.result.get_hosts_view().get_scans_page().write(text)
         
-    def update_port_info(self, obj, host):
+    def update_port_info(self, host):
         """
         Update the port scan information of host.
         """
         self.result.update_host_info(host)
-        self.update_info(None, 'Host scanning finished\n')
+        self.update_info('Host scanning finished\n')
         
-    def update_attractors(self, obj, attractors):
+    def update_attractors(self, attractors):
         """
         Update the scans page with the graph of attractors
         """
         self.result.get_hosts_view().get_scans_page().update_attractors(attractors)
-        self.update_info(None, 'Building fingerprint\n')
         
-    def update_host_information(self, obj, info):
+    def update_host_information(self, info):
         """
         Update information about OS running on host.
         """
         self.result.get_hosts_view().get_scans_page().update_os_info(info)
-        self.update_info(None, 'OS detection finished\n')
+        self.update_info('OS detection finished\n')
         
-    def honeyd_finished(self, obj, result):
+    def honeyd_finished(self, result):
         """
         Write information about honeyd detection result
         """
         if result:
-            self.update_info(None, 'Target is honeyd\n')
+            self.update_info('Target is honeyd\n')
         else:
-            self.update_info(None, 'Target isnt honeyd\n')
+            self.update_info('Target isnt honeyd\n')
             
-    def synproxy_finished(self, obj, result):
+    def synproxy_finished(self, result):
         """
         Write information about synproxy detection result
         """
         if result:
-            self.update_info(None, 'Target is synproxy\n')
+            self.update_info('Target is synproxy\n')
         else:
-            self.update_info(None, 'Target isnt synproxy\n')            
+            self.update_info('Target isnt synproxy\n')   
+            
+    def update(self, fd, cond):
+        """
+        Update interface with the information received by zion process
+        """
+        signal, params = self.q2.get()
+        
+        if signal=='update_status':
+            self.update_info(params)
+        elif signal=='scan_finished':
+            self.update_port_info(params)
+        elif signal=='attractors_built':
+            self.update_attractors(params)
+        elif signal=='matching_finished':
+            self.update_host_information(params)
+        elif signal=='honeyd_finished':
+            self.honeyd_finished(params)
+        elif signal=='synproxy_finished':
+            self.synproxy_finished(params)
+        return True            
 
 class ZionProfileHoneyd(ZionProfile):
     """
@@ -444,8 +457,9 @@ class ZionProfileHoneyd(ZionProfile):
         opts.add("-n")
                 
         for target in targets:
-            z = zion.Zion(opts,  [target], self.connector)
-            z.start()
+            z = zion.Zion(opts,  [target])
+            p = Process(target=z.run, args=(self.q2,))
+            p.start()
 
 class ZionProfileOS(ZionProfile):
     """
@@ -458,7 +472,7 @@ class ZionProfileOS(ZionProfile):
     def start(self):
         """
         """
-        z = zion.Zion(options.Options(), [], self.connector)
+        z = zion.Zion(options.Options(), [])
         
         self.result.get_hosts_view().get_scans_page().clean()
         self.result.clear_port_list()
@@ -486,7 +500,10 @@ class ZionProfileOS(ZionProfile):
         z.get_option_object().add("-c",device)
         z.get_option_object().add("-d")
         z.get_option_object().add("--forge-addr",saddr)
-        z.start()
+        
+        p = Process(target=z.run, args=(self.q2,))
+        p.start()
+           
 
 class ZionProfilePrompt(ZionProfile):
     """
@@ -537,7 +554,7 @@ class ZionProfilePrompt(ZionProfile):
         if zion_options.has(options.OPTION_DETECT) or zion_options.has(options.OPTION_SYNPROXY):
             self.result.get_hosts_view().get_scans_page().show_attractor_box()
             
-        z = zion.Zion(zion_options, [], self.connector)
+        z = zion.Zion(zion_options, [])
             
         for a in addrs:
             if address.recognize(a) == address.Unknown:
@@ -551,7 +568,8 @@ class ZionProfilePrompt(ZionProfile):
                 z.append_target(host.Host(a))
         
         # run zion
-        z.start()
+        p = Process(target=z.run, args=(self.q2,))
+        p.start()
         
 
 class ZionProfileSYNProxy(ZionProfile):
@@ -561,6 +579,8 @@ class ZionProfileSYNProxy(ZionProfile):
         """
         """
         ZionProfile.__init__(self, target)
+        # remove attractor box
+        self.result.get_hosts_view().get_scans_page().hide_attractor_box()
         
     def start(self):
         """
@@ -591,8 +611,9 @@ class ZionProfileSYNProxy(ZionProfile):
         opts.add("-y")
                 
         for target in targets:
-            z = zion.Zion(opts,  [target], self.connector)
-            z.start()
+            z = zion.Zion(opts,  [target])
+            p = Process(target=z.run, args=(self.q2,))
+            p.start()
 
 PROFILE_CLASS = {'1': ZionProfileHoneyd,
                  '2': ZionProfileOS,

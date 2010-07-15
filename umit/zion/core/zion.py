@@ -23,7 +23,6 @@
 
 import random
 import time
-import thread, threading
 import sqlite3
 import sys
 import json
@@ -44,18 +43,16 @@ METHOD_BETA = 2
 EPOCHS = 500#1800
 ALPHA_LIMIT = 0.1
 
-class Zion(threading.Thread):
+class Zion(object):
     """
     """
-    def __init__(self, option, target=[], connector=None):
+    def __init__(self, option, target=[]):
         """
         """
         self.__option = option
         self.__target = target
         self.__capture_result = []
         self.__attractors = []
-        self.__connector = connector
-        threading.Thread.__init__ (self)
 
     def get_option_object(self):
         """
@@ -184,9 +181,11 @@ class Zion(threading.Thread):
             packet.stop()
                         
 
-    def run(self):
+    def run(self, outq=None):
         """
         """
+        self.__outq = outq
+        
         if self.__option.has(options.OPTION_HELP):
 
             print options.HELP_TEXT
@@ -209,17 +208,17 @@ class Zion(threading.Thread):
             print 'Capturing packets'
             self.do_forge(['tcp.seq'])
             
-            self.notify('isn_samples_finished')
+            self.notify('update_status', 'Creating time series\n')
 
             print 'Calculating PRNG'
             Rt = self.calculate_PRNG()
             
-            self.notify('timeseries_created')
+            self.notify('update_status', 'Building attractors\n')
             
             print 'Creating attractors'
             self.__classification(Rt)
             
-            self.notify('fingerprint_finished')
+            self.notify('update_status', 'Performing OS fingerprint matching\n')
             
             print 'Matching'
             result = self.__matching()
@@ -450,10 +449,7 @@ class Zion(threading.Thread):
     
     def notify(self, signal, param=None):
         """
-        If a connector exists, emits the signal.
+        If a out queue exists, output the information.
         """
-        if self.__connector!=None:
-            if param==None:
-                self.__connector.emit(signal)
-            else:
-                self.__connector.emit(signal, param)
+        if self.__outq!=None:
+            self.__outq.put((signal, param))
