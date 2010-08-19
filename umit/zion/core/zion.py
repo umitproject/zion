@@ -34,7 +34,7 @@ from umit.zion.core import options, host, pmatrix
 from umit.zion.scan import sniff, portscan, forge
 
 FORGE_FILTER = 'src host %s and src port %s and dst host %s and dst port %s'
-AMOUNT_OS_DETECTION = 50
+AMOUNT_OS_DETECTION = 100
 AMOUNT_HONEYD_DETECTION = 5
 SEND_INTERVAL = 0.1
 SYNPROXY_INTERVAL = 1
@@ -77,6 +77,8 @@ class Zion(object):
     def do_scan(self):
         """
         """
+        self.notify('update_status', "Host scanning started\n")
+        
         if self.__option.has(options.OPTION_PORTS):
             ports = self.__option.get(options.OPTION_PORTS)
             ports = options.parse_posts_list(ports)
@@ -131,6 +133,8 @@ class Zion(object):
 
         if mode == options.FORGE_MODE_SYN:
             self.do_scan()
+            
+            self.notify('update_status', 'Capturing packets\n')
             
             if fields!=None:
                 s.fields = fields
