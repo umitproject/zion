@@ -1,4 +1,8 @@
-default: all
+default: min
+
+min:
+	cd code; cc -ggdb -Wall -c *.c
+	cd bind; python setup.py build_ext -f -b ../
 
 all:
 	cd code; cc -ggdb -Wall -c *.c
@@ -32,4 +36,4 @@ all:
 
 clean:
 	cd code; rm *.o
-	cd bind; rm -rf clann/*.so
+	rm -rf *.so
