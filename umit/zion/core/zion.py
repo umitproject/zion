@@ -217,17 +217,22 @@ class Zion(object):
             print 'Calculating PRNG'
             Rt = self.calculate_PRNG()
 
-            self.notify('update_status', 'Building attractors\n')
+            if Rt is not None:
+                self.notify('update_status', 'Building attractors\n')
 
-            print 'Creating attractors'
-            self.__classification(Rt)
+                print 'Creating attractors'
+                self.__classification(Rt)
 
-            self.notify('update_status', 'Performing OS fingerprint matching\n')
+                self.notify('update_status', 'Performing matching\n')
 
-            print 'Matching'
-            result = self.__matching()
+                print 'Matching'
+                result = self.__matching()
 
-            self.notify('matching_finished', result)
+                self.notify('matching_finished', result)
+
+            else:
+                self.notify('update_status', 'No data to build attractors\n')
+                result = None
 
 
         elif self.__option.has(options.OPTION_SYNPROXY):
@@ -296,7 +301,7 @@ class Zion(object):
         self.do_forge(['tcp.seq'])
         Rt = self.calculate_PRNG()
 
-        if len(Rt) > 0:
+        if Rt is not None and len(Rt) > 0:
 
             # verify cycles
             for i in range(0,5):
@@ -336,39 +341,47 @@ class Zion(object):
         self.do_scan()
         ports = target.get_open_ports()
 
-        self.notify('update_status','Generate random ports\n')
+        if len(ports) > 0:
 
-        origin_port1 = random.randint(1024, 65535)
-        while True:
-            origin_port2 = random.randint(1024, 65535)
-            if origin_port2!=origin_port1:
-                break
+            self.notify('update_status','Generate random ports\n')
 
-        s = sniff.Sniff()
-        addr = self.__option.get(options.OPTION_FORGE_ADDR)
+            # TODO: do a better rand port choice algorithm (maybe an UMPA function?)
+            origin_port1 = random.randint(1024, 65535)
+            while True:
+                origin_port2 = random.randint(1024, 65535)
+                if origin_port2!=origin_port1:
+                    break
 
-        self.notify('update_status','Sending packets\n')
-        s.fields = ['tcp.seq']
-        self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
-        isn1 = self.__capture_result[0][1]
-        time.sleep(SYNPROXY_INTERVAL)
-        self.do_forge_mode_syn(s, target, ports[0], addr, origin_port2)
-        isn2 = self.__capture_result[0][1]
-        time.sleep(SYNPROXY_INTERVAL)
-        self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
-        isn3 = self.__capture_result[0][1]
+            s = sniff.Sniff()
+            addr = self.__option.get(options.OPTION_FORGE_ADDR)
 
-        if isn1!=isn2 and isn1==isn3:
-            return True
-        else:
-            return False
+            self.notify('update_status','Sending packets\n')
+            s.fields = ['tcp.seq']
+            self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
+            isn1 = self.__capture_result[0][1]
+            time.sleep(SYNPROXY_INTERVAL)
+            self.do_forge_mode_syn(s, target, ports[0], addr, origin_port2)
+            isn2 = self.__capture_result[0][1]
+            time.sleep(SYNPROXY_INTERVAL)
+            self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
+            isn3 = self.__capture_result[0][1]
+
+            if isn1 != isn2 and isn1 == isn3:
+                return True
+            else:
+                return False
+
+        return None
 
 
     def calculate_PRNG(self):
-        """ Calculate Pseudo Random Number Generator from ISN captured. """
+        """
+        Calculate Pseudo Random Number Generator from ISN captured.
+        """
 
         if len(self.__capture_result) == 0:
             print 'Error: no results available'
+            return None
         else:
             isn = []
             for i in range(len(self.__capture_result)):
@@ -400,23 +413,24 @@ class Zion(object):
         self.__attractors = []
 
         # normalize results
-        max_val = max(Rt)
-        min_val = min(Rt)
-        ratio = 2/(max_val-min_val)
+        if Rt is not None:
+            max_val = max(Rt)
+            min_val = min(Rt)
+            ratio = 2/(max_val-min_val)
 
-        self.__som = som.new(2,(30,30))
-        self.__matrix = matrix.new(len(Rt)-1,2)
+            self.__som = som.new(2,(30,30))
+            self.__matrix = matrix.new(len(Rt)-1,2)
 
-        for i in range(len(Rt)-1):
-            x = Rt[i+1]
-            y = Rt[i]
-            self.__attractors.append((x, y))
-            matrix.set(self.__matrix, i, 0, x)
-            matrix.set(self.__matrix, i, 1, y)
+            for i in range(len(Rt)-1):
+                x = Rt[i+1]
+                y = Rt[i]
+                self.__attractors.append((x, y))
+                matrix.set(self.__matrix, i, 0, x)
+                matrix.set(self.__matrix, i, 1, y)
 
-        self.notify('attractors_built', self.__attractors)
+            self.notify('attractors_built', self.__attractors)
 
-        som.caracterization(self.__som, self.__matrix, EPOCHS)
+            som.caracterization(self.__som, self.__matrix, EPOCHS)
 
     def __matching(self):
         """
