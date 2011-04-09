@@ -58,7 +58,7 @@ class Zion(object):
         """
         """
         return self.__option
-    
+
     def reset_options(self):
         """
         """
@@ -78,7 +78,7 @@ class Zion(object):
         """
         """
         self.notify('update_status', "Host scanning started\n")
-        
+
         if self.__option.has(options.OPTION_PORTS):
             ports = self.__option.get(options.OPTION_PORTS)
             ports = options.parse_posts_list(ports)
@@ -93,9 +93,9 @@ class Zion(object):
 
         for target in self.__target:
             print target
-            
+
         self.notify('scan_finished', self.__target[0])
-            
+
     def do_capture(self, dev=None):
         """
         """
@@ -133,9 +133,9 @@ class Zion(object):
 
         if mode == options.FORGE_MODE_SYN:
             self.do_scan()
-            
+
             self.notify('update_status', 'Capturing packets\n')
-            
+
             if fields!=None:
                 s.fields = fields
 
@@ -149,11 +149,11 @@ class Zion(object):
         else:
             print 'Unimplemented forge mode %s.' % mode
 
-            
+
     def do_forge_mode_syn(self, s, target, target_port, addr, port):
         """
         """
-        
+
         amount = self.__option.get(options.OPTION_CAPTURE_AMOUNT)
 
         if amount:
@@ -183,79 +183,79 @@ class Zion(object):
             print 'Error:', e
         except KeyboardInterrupt:
             packet.stop()
-                        
+
 
     def run(self, outq=None):
         """
         """
         self.__outq = outq
-        
+
         if self.__option.has(options.OPTION_HELP):
 
             print options.HELP_TEXT
-            
+
         elif self.__option.has(options.OPTION_DETECT):
-            
+
             self.notify('update_status', 'OS Detection Started\n')
-            
+
             print
             print 'OS Detection'
             print '------------'
-            
+
             # configure parameters for OS detection
             if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
                 self.__option.add('--capture-amount',AMOUNT_OS_DETECTION)
             if not self.__option.has(options.OPTION_SEND_INTERVAL):
-                self.__option.add('-i',SEND_INTERVAL)                
+                self.__option.add('-i',SEND_INTERVAL)
             self.__option.add('-f','syn')
-            
+
             print 'Capturing packets'
             self.do_forge(['tcp.seq'])
-            
+
             self.notify('update_status', 'Creating time series\n')
 
             print 'Calculating PRNG'
             Rt = self.calculate_PRNG()
-            
+
             self.notify('update_status', 'Building attractors\n')
-            
+
             print 'Creating attractors'
             self.__classification(Rt)
-            
+
             self.notify('update_status', 'Performing OS fingerprint matching\n')
-            
+
             print 'Matching'
             result = self.__matching()
-        
+
             self.notify('matching_finished', result)
-            
-            
+
+
         elif self.__option.has(options.OPTION_SYNPROXY):
-            
+
             self.notify('update_status', 'Syn Proxy Detection Started\n\n')
-            
+
             synproxy = self.synproxy_detection()
             if synproxy==True:
                 print 'Target is synproxy'
             else:
                 print 'Target isnt synproxy'
-                
+
             self.notify('synproxy_finished', synproxy)
-            
+
         elif self.__option.has(options.OPTION_HONEYD):
-            
+
             self.notify('update_status', 'Honeyd Detection Started\n')
-            
+
             honeyd = self.honeyd_detection()
             if honeyd==False:
                 print 'Target isnt honeyd'
             else:
                 print 'Target is honeyd'
-                
+
             self.notify('honeyd_finished', honeyd)
 
         elif self.__option.has(options.OPTION_FORGE):
-            
+
             self.notify('update_status', 'Forge started\n')
 
             print
@@ -267,35 +267,35 @@ class Zion(object):
         elif self.__option.has(options.OPTION_SCAN):
 
             self.notify('update_status', 'Scanning host\n')
-            
+
             print
             print 'TCP SYN port scan results'
             print '-------------------------'
 
             self.do_scan()
-                
+
         elif self.__option.has(options.OPTION_CAPTURE):
 
             print
             print 'Capturing packets'
             print '-----------------'
 
-            self.do_capture()                
+            self.do_capture()
 
         else:
             print options.HELP_TEXT
-            
-            
+
+
     def honeyd_detection(self):
-        """ Detect if target are an honeyd. """        
+        """ Detect if target are an honeyd. """
         # configure parameters for honeyd detection
         if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
             self.__option.add('--capture-amount',AMOUNT_HONEYD_DETECTION)
         self.__option.add('-f','syn')
-                
+
         self.do_forge(['tcp.seq'])
         Rt = self.calculate_PRNG()
-        
+
         if len(Rt) > 0:
 
             # verify cycles
@@ -303,7 +303,7 @@ class Zion(object):
                 values = set(Rt[i::5])
                 if not len(values)==1:
                     return False
-                    
+
             # verify constant increments
             cycle = Rt[:5]
             increments = []
@@ -313,31 +313,31 @@ class Zion(object):
             for k in incs:
                 if increments.count(k)==4:
                     return True
-            
+
             return False
         else:
             return False
-            
 
-        
+
+
     def synproxy_detection(self):
         """ Detect if target is an syn proxy. """
-                
+
         # configure parameters for honeyd detection
         if not self.__option.has(options.OPTION_CAPTURE_AMOUNT):
             self.__option.add('--capture-amount',1)
         self.__option.add('-f','syn')
-        
+
         self.notify('update_status','Searching for open ports\n')
-        
+
         target = self.__target[0]
-        
+
         # search for open ports in target
         self.do_scan()
         ports = target.get_open_ports()
-        
+
         self.notify('update_status','Generate random ports\n')
-        
+
         origin_port1 = random.randint(1024, 65535)
         while True:
             origin_port2 = random.randint(1024, 65535)
@@ -346,7 +346,7 @@ class Zion(object):
 
         s = sniff.Sniff()
         addr = self.__option.get(options.OPTION_FORGE_ADDR)
-        
+
         self.notify('update_status','Sending packets\n')
         s.fields = ['tcp.seq']
         self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
@@ -357,16 +357,16 @@ class Zion(object):
         time.sleep(SYNPROXY_INTERVAL)
         self.do_forge_mode_syn(s, target, ports[0], addr, origin_port1)
         isn3 = self.__capture_result[0][1]
-        
+
         if isn1!=isn2 and isn1==isn3:
             return True
         else:
             return False
-        
-            
+
+
     def calculate_PRNG(self):
         """ Calculate Pseudo Random Number Generator from ISN captured. """
-        
+
         if len(self.__capture_result) == 0:
             print 'Error: no results available'
         else:
@@ -374,61 +374,61 @@ class Zion(object):
             for i in range(len(self.__capture_result)):
                 if self.__capture_result[i][1][0] <> 'None':
                     isn.append(int(self.__capture_result[i][1][0]))
-        
+
         ordered = True
-        
+
         # verify if isn numbers are ordered ascendly
         for i in range(1,len(isn)):
             if isn[i] < isn[i-1]:
                 ordered = False
                 break
-            
+
         Rt = []
-        
+
         if ordered==False:
             Rt = isn
         else:
             for i in range(len(isn)-1):
                 Rt.append(isn[i+1] - isn[i])
-                    
+
         return Rt
-    
-        
+
+
     def __classification(self,Rt):
         """ Get attractors and put them in SOM. """
-                
+
         self.__attractors = []
-                
+
         # normalize results
         max_val = max(Rt)
         min_val = min(Rt)
         ratio = 2/(max_val-min_val)
-        
+
         self.__som = som.new(2,(30,30))
         self.__matrix = matrix.new(len(Rt)-1,2)
-                
+
         for i in range(len(Rt)-1):
             x = Rt[i+1]
             y = Rt[i]
             self.__attractors.append((x, y))
             matrix.set(self.__matrix, i, 0, x)
             matrix.set(self.__matrix, i, 1, y)
-            
-        self.notify('attractors_built', self.__attractors)    
+
+        self.notify('attractors_built', self.__attractors)
 
         som.caracterization(self.__som, self.__matrix, EPOCHS)
-    
+
     def __matching(self):
         """
         Match fingerprint with database
         """
         dmin = sys.maxint
         id_min = None
-        
+
         conn = sqlite3.connect('umit/zion/db/db.sqlite')
         c = conn.cursor()
         c.execute('SELECT software.pk, s_attractor.fp FROM software INNER JOIN fingerprint ON software.pk = fingerprint.fk_software INNER JOIN s_attractor ON s_attractor.pk = fingerprint.fk_sig1')
-        
+
         for fingerprint in c:
             attractor = cPickle.loads(str(fingerprint[1]))
             base = attractor.convert()
@@ -436,7 +436,7 @@ class Zion(object):
             if d < dmin:
                 dmin = d
                 id_min = fingerprint[0]
-                        
+
         details = None
         if id_min!=None:
             for vendor_name, os_name, os_version in c.execute('SELECT vendor.name, name.name, name.version FROM software INNER JOIN vendor ON software.fk_vendor = vendor.pk INNER JOIN name ON software.fk_name = name.pk WHERE software.pk = ?',(id_min,)):
@@ -444,13 +444,13 @@ class Zion(object):
                 print 'Vendor name: %s\nOS name: %s\nOS version: %s\nMetric: %d' % (vendor_name, os_name, os_version, dmin)
         else:
             print 'no fingerprints available in database'
-        
+
         return details
-        
+
     def get_attractors(self):
         """ Return the list of attractors. """
         return self.__attractors
-    
+
     def notify(self, signal, param=None):
         """
         If a out queue exists, output the information.
