@@ -1,0 +1,3 @@
+[submodule "umit/umpa"]
+	path = umit/umpa
+	url = umitgit@dev.umitproject.org:umpa.git
