@@ -1,3 +1,6 @@
 [submodule "umit/umpa"]
 	path = umit/umpa
 	url = umitgit@dev.umitproject.org:umpa.git
+[submodule "deps/clann"]
+	path = deps/clann
+	url = http://git.umitproject.org/zion.git
