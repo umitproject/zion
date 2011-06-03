@@ -3,6 +3,7 @@ default: min
 min:
 	cd code; cc -ggdb -Wall -c *.c
 	cd bind; python setup.py build_ext -f -b ../
+	cp *.so* umit/clann/
 
 all:
 	cd code; cc -ggdb -Wall -c *.c
@@ -33,6 +34,8 @@ all:
 		../code/clann.o \
 		../code/reader.o
 	cd bind; python setup.py build_ext -f -b umit/clann
+
+
 
 clean:
 	cd code; rm *.o
