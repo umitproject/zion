@@ -24,6 +24,15 @@ Address recognition and management module.
 
 import re
 
+def is_name(addr):
+	"""
+	"""
+	valid_domains = [ line.upper().replace('.', '\.').strip() 
+		                              for line in open('deps/zion/umit/zion/core/domains.txt') 
+		                              if line[0] != '#' ]
+	r = re.compile(r'^[A-Z0-9\-]{2,63}\.(%s)$' % ('|'.join(valid_domains),))
+	return True if r.match(addr.upper()) else False
+		
 def recognize(addr):
     """
     """
@@ -66,7 +75,7 @@ class Ethernet(Address):
 class IPv4(Address):
     """
     """
-    regexp = '\.'.join(["(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])"] * 4) + '$'
+    regexp = "((25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)"
     bdcast = (255, 255, 255, 255)
 
     def __init__(self, addr=None):
