@@ -26,6 +26,7 @@ import socket
 
 import umit.umpa.protocols
 import umit.zion.core.address
+from umit.core import Ipv6
 
 from umit.zion.core import options
 from threading import Thread
@@ -42,23 +43,35 @@ class Packet(Thread):
         self._addr = daddr
 
         if type(self._addr) == umit.zion.core.address.IPv4:
+            print "i am in elif of ipv4 create socket"
             self._sock = socket.socket(socket.AF_INET,
                     socket.SOCK_RAW,
                     socket.IPPROTO_RAW)
+            self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
         elif type(self._addr) == umit.zion.core.address.IPv6:
+            print "i am in elif of ipve create socket"
             self._sock = socket.socket(socket.AF_INET6,
                     socket.SOCK_RAW,
                     socket.IPPROTO_TCP)
+            self._sock.setsockopt(socket.IPPROTO_IPV6, socket.IP_HDRINCL, 1)
         else:
             raise 'Unimplemented protocol.'
 
-        self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+        
 
         if ptype == options.FORGE_MODE_SYN:
             if type(self._addr) == umit.zion.core.address.IPv4:
                 ip = IPv4(saddr, self._addr.addr)
                 tcp = TCPSYN(args[0], args[1])
+                print "In forge.py if case for IPv4"
                 self._packet = umit.umpa.Packet(ip, tcp)
+                print self._packet
+            elif type(self._addr) == umit.zion.core.address.IPv6:
+                ipv6 = IPv6(saddr, self._addr.addr)
+                tcp = TCPSYN6(args[0], args[1])
+                print "In forge.py elif case for IPv6"
+                self._packet = umit.umpa.Packet(ipv6, tcp)
+                print self._packet
             else:
                 raise 'UMPA unimplemented protocol.'
         else:
@@ -67,6 +80,9 @@ class Packet(Thread):
     def send(self):
         """
         """
+        #print "In forge seilf.sendsend"
+        #print self._addr.addr
+        #print 
         self._sock.sendto(self._packet.get_raw(), (self._addr.addr, 0))
 
     def stop(self):
@@ -89,17 +105,32 @@ class IPv4(umit.umpa.protocols.IP):
     def __init__(self, saddr, daddr):
         """
         """
+        print "In Ipv4"
         super(IPv4, self).__init__()
 
         self.src = saddr
         self.dst = daddr
-
+        
+class IPv6(umit.umpa.protocols.IPV6):
+	"""
+	"""
+	def __init__(self, saddr, daddr):
+		"""
+		"""
+		print "In ipv6"
+		super(IPv6, self).__init__()
+		saddr = Ipv6.exapand_ip_arddess(saddr)
+		daddr = Ipv6.exapand_ip_arddess(daddr)
+		self.src = saddr
+		self.dst = daddr
+        
 class TCP(umit.umpa.protocols.TCP):
     """
     """
     def __init__(self, sport, dport):
         """
         """
+        print "In TCP"
         super(TCP, self).__init__()
 
         self.srcport = sport
@@ -111,6 +142,32 @@ class TCPSYN(TCP):
     def __init__(self, sport, dport):
         """
         """
+        print "In TCPSYN"
         super(TCPSYN, self).__init__(sport, dport)
 
         self.set_flags('flags', syn=True)
+
+class TCP6(umit.umpa.protocols.TCP6):
+	"""
+	"""
+	def __init__(self, sport, dport):
+		"""
+		"""
+		print "In TCP6"
+		super(TCP6, self).__init__()
+		
+		self.srcport = sport
+		self.dstport = dport
+		
+class TCPSYN6(TCP6):
+	"""
+	"""
+	
+	def __init__(self, sport, dport):
+		"""
+		"""
+		print "In TCPSYN6"
+		super(TCPSYN6, self).__init__(sport, dport)
+		
+		self.set_flags('flags', syn=True)
+

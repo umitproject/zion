@@ -107,10 +107,15 @@ class Probe(object):
         
         if probe_type == PROBE_TYPE_TCP_SYN:
             host, args = target
+            print "++++++++"
+            print(host)
+            print "+++++++++"
             sock = socket.socket(get_inet_type(host), socket.SOCK_STREAM)
             sock.setblocking(block)
             sock.settimeout(self.__timeout)
             conn = ConnectThread(sock, (host.get_addr().addr, args))
+            print "value of conn",
+            print(conn)
 
         return conn
 
@@ -118,18 +123,34 @@ class Probe(object):
         """
         """
         result = []
+        print "Value of target in probe",
+        print(targets)
+        print "value of self.__socks",
+        print(self.__socks)
 
         while len(targets) + len(self.__socks) != 0:
             while len(self.__socks) < self.__limit and len(targets):
                 target = targets.pop()
+                print "Target value for create probe ",
+                print(target)
                 conn = self.create_probe(target, probe_type)
+                print "======="
+                #print(conn)
+                #print(self.__socks)
+                print "======="
                 if conn:
                     self.__socks.append([target, conn])
+                    print "----conn start----"
                     conn.start()
+
 
             for t, s in self.__socks:
                 if s.ans != None:
                     self.__socks.remove([t, s])
+                    print "---------"
+                    print(t)
+                    print(s.ans)
+                    print "---------"
                     result.append([t, s.ans])
 
         return result
