@@ -327,8 +327,6 @@ class Packet(object):
             i = IPv6(self.__packet[-1].payload)
             self.__packet.append(i)
             next_type = i.nxt
-            print "In sniff .py value of next type"
-            print next_type
         else:
             f = Frame(self.__packet[-1].payload)
             self.__packet.append(f)
@@ -402,39 +400,22 @@ class Sniff(object):
         self.packets = []
         self.devices = {}
         for d in umit.umpa.sniffing.get_available_devices():
-            print "In sniff.py zion"
-            print(d)
             self.devices[d] = Device(d)
 
     def start(self, device):
         """
         """
         capture = pcap.pcap(device)
-        print "In sniff start"
-        print(capture)
-        print "________"
         capture.setfilter(self.filter)
         number = 0
         result = []
-        print "i am here in sniff start "
-        print(capture)
         
         for timestamp, packet in capture:
-            print(timestamp)
-            print(packet)
             p = Packet(timestamp, packet, capture.datalink())
-            print "timestamp"
-            print(timestamp)
-            print "-------"
-            print(packet)
-            print "Value of p"
-            #print(p)
             p.disassemble()
             
             self.packets.append(p)
             number += 1
-            #print "value of packet in sniff"
-            #print(self.packets)
 
             if len(self.fields):
                 s = []
@@ -447,6 +428,5 @@ class Sniff(object):
 
             if number == self.amount:
                 break
-        
-        print "Return From Sniff"
+
         return result

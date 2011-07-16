@@ -3,6 +3,7 @@
 # Copyright (C) 2009 Adriano Monteiro Marques.
 #
 # Author: Joao Paulo de Souza Medeiros <ignotus@umitproject.org>
+#         Gaurav Ranjan < g.ranjan143@gmail.com >
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

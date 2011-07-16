@@ -3,6 +3,7 @@
 # Copyright (C) 2009 Adriano Monteiro Marques.
 #
 # Author: Joao Paulo de Souza Medeiros <ignotus@umitproject.org>
+#         Gaurav Ranjan < g.ranjan143@gmail.com >
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,34 +80,20 @@ class Zion(object):
         """
         """
         self.notify('update_status', "Host scanning started\n")
-        print "In do scan "
 
         if self.__option.has(options.OPTION_PORTS):
             ports = self.__option.get(options.OPTION_PORTS)
             ports = options.parse_posts_list(ports)
-            print "in if case "
-            print(ports)
         else:
             ports = portscan.PORTS_DEFAULT
-            print "in else case"
-            print(ports)
+
 
         scan = portscan.TCPConnectPortScan(self.__target)
         result = scan.scan(ports)
         
-        print "Value of result in do dcan",
-        print(result)
-
         for (target, port), status in result:
             target.add_port(host.Port(port, host.PROTOCOL_TCP, status))
-        print "+++++++++++++"
-        print(self.__target)
-        i=0;
-        for target in self.__target:
-            print "OOOOOOOO"
-            print(++i)
-            print target
-            print "ooooooooo"
+
 
         self.notify('scan_finished', self.__target[0])
 
@@ -140,11 +127,9 @@ class Zion(object):
         """
         """
         mode = self.__option.get(options.OPTION_FORGE)
-        print "In do forge"
-        print(mode)
-        print(options.FORGE_MODE_SYN)
+
         addr = self.__option.get(options.OPTION_FORGE_ADDR)
-        print(addr)
+
         port = random.randint(1024, 65535)
         
 
@@ -152,24 +137,19 @@ class Zion(object):
 
         if mode == options.FORGE_MODE_SYN:
             self.do_scan()
-            print "scan completed"
+
 
             self.notify('update_status', 'Capturing packets\n')
             print(fields)
 
             if fields!=None:
                 s.fields = fields
-            print "Targer value in do forge"
-            print(self.__target)
+
 
             for t in self.__target:
 
                 ports = t.get_open_ports()
-                print "list of open ports"
-                print(ports)
-                print "Value of s "
-                print(s)
-                print "do fiorge end"
+
 
                 if len(ports):
                     self.do_forge_mode_syn(s, t, ports[0], addr, port)
@@ -186,27 +166,21 @@ class Zion(object):
 
         if amount:
             s.amount = int(amount)
-        print "In do forge syn"
-        print (target.get_addr())
-        print(target_port)
-        print(addr)
-        print(port)
-        print "syn end"
+
 
         s.filter = FORGE_FILTER % (target.get_addr().addr, target_port,
                 addr, port)
         print "_____________________________"
         print "src host %s and src port %s and dst host %s and dst port %s" % (target.get_addr().addr, target_port,addr, port)
         print "_____________________________"
-        print "Called fro forge.packet"
+
         packet = forge.Packet(options.FORGE_MODE_SYN,
                 addr,
                 target.get_addr(),
                 (port, target_port))
 
         interval = self.__option.get(options.OPTION_SEND_INTERVAL)
-        print "The value of Interval"
-        print interval
+
 
         if interval:
             packet.interval = float(interval)
@@ -342,7 +316,7 @@ class Zion(object):
         self.do_forge(['tcp.seq'])
         Rt = self.calculate_PRNG()
         print(Rt)
-        print "I am here"
+
 
         if Rt is not None and len(Rt) > 0:
 
