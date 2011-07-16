@@ -27,6 +27,10 @@ import socket
 import umit.umpa.protocols
 import umit.zion.core.address
 from umit.core import Ipv6
+from umit.umpa import Socket
+from umit.umpa._sockets import INET6
+from umit.umpa._sockets import INET
+from umit.umpa.utils.security import super_priviliges
 
 from umit.zion.core import options
 from threading import Thread
@@ -44,16 +48,16 @@ class Packet(Thread):
 
         if type(self._addr) == umit.zion.core.address.IPv4:
             print "i am in elif of ipv4 create socket"
-            self._sock = socket.socket(socket.AF_INET,
-                    socket.SOCK_RAW,
-                    socket.IPPROTO_RAW)
-            self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+            #self._sock = socket.socket(socket.AF_INET,
+            #        socket.SOCK_RAW,
+            #        socket.IPPROTO_RAW)
+            #self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+            self._sock = super_priviliges(INET)
         elif type(self._addr) == umit.zion.core.address.IPv6:
             print "i am in elif of ipve create socket"
-            self._sock = socket.socket(socket.AF_INET6,
-                    socket.SOCK_RAW,
-                    socket.IPPROTO_TCP)
-            self._sock.setsockopt(socket.IPPROTO_IPV6, socket.IP_HDRINCL, 1)
+            #self._sock = socket.socket(socket.AF_INET6,socket.SOCK_RAW, socket.IPPROTO_RAW)
+            #self._sock.setsockopt(socket.IPPROTO_IPV6, socket.IP_HDRINCL, 1)
+            self._sock = super_priviliges(INET6)
         else:
             raise 'Unimplemented protocol.'
 
@@ -63,13 +67,13 @@ class Packet(Thread):
             if type(self._addr) == umit.zion.core.address.IPv4:
                 ip = IPv4(saddr, self._addr.addr)
                 tcp = TCPSYN(args[0], args[1])
-                print "In forge.py if case for IPv4"
+                #print "In forge.py if case for IPv4"
                 self._packet = umit.umpa.Packet(ip, tcp)
-                print self._packet
+                #print self._packet
             elif type(self._addr) == umit.zion.core.address.IPv6:
                 ipv6 = IPv6(saddr, self._addr.addr)
                 tcp = TCPSYN6(args[0], args[1])
-                print "In forge.py elif case for IPv6"
+                #print "In forge.py elif case for IPv6"
                 self._packet = umit.umpa.Packet(ipv6, tcp)
                 print self._packet
             else:
@@ -83,7 +87,8 @@ class Packet(Thread):
         #print "In forge seilf.sendsend"
         #print self._addr.addr
         #print 
-        self._sock.sendto(self._packet.get_raw(), (self._addr.addr, 0))
+        #self._sock.sendto(self._packet.get_raw(), (self._addr.addr, 0))
+        self._sock.send(self._packet)
 
     def stop(self):
         """
