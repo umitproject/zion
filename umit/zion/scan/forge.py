@@ -71,9 +71,8 @@ class Packet(Thread):
                 self._packet = umit.umpa.Packet(ip, tcp)
             elif type(self._addr) == umit.zion.core.address.IPv6:
                 ipv6 = IPv6(saddr, self._addr.addr)
-                tcp = TCPSYN6(args[0], args[1])
+                tcp = TCPSYN(args[0], args[1])
                 self._packet = umit.umpa.Packet(ipv6, tcp)
-                print self._packet
             else:
                 raise 'UMPA unimplemented protocol.'
         else:
@@ -117,7 +116,6 @@ class IPv6(umit.umpa.protocols.IPV6):
 	def __init__(self, saddr, daddr):
 		"""
 		"""
-		print "In ipv6"
 		super(IPv6, self).__init__()
 		saddr = Ipv6.exapand_ip_arddess(saddr)
 		daddr = Ipv6.exapand_ip_arddess(daddr)

@@ -40,7 +40,6 @@ class PortScan(object):
     def __init__(self, target=[]):
         """
         """
-        print "Target in portscan.py protscan"
         self.target = target
 
     def append_target(self, target):
@@ -66,8 +65,6 @@ class TCPConnectPortScan(PortScan):
         """
         """
         targets = []
-        print "value of target in TCPConnectPortScan"
-        print(self.target)
 
         if mode == SCAN_MODE_RANDOM:
             random.seed()

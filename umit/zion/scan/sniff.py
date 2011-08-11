@@ -421,7 +421,7 @@ class Sniff(object):
                 s = []
                 for f in self.fields:
                     s.append(str(p.get_field(f)))
-                print '(%f)' % p.get_timestamp(),', '.join(s)
+                #print '(%f)' % p.get_timestamp(),', '.join(s)
                 result.append((p.get_timestamp(),s))
             else:
                 print '\n', p
