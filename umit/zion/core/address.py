@@ -31,8 +31,15 @@ def is_name(addr):
 	valid_domains = [ line.upper().replace('.', '\.').strip() 
 		                              for line in open('deps/zion/umit/zion/core/domains.txt') 
 		                              if line[0] != '#' ]
-	r = re.compile(r'^[A-Z0-9\-]{2,63}\.(%s)$' % ('|'.join(valid_domains),))
-	return True if r.match(addr.upper()) else False
+	r1 = re.compile(r'^[A-Z0-9\-]{2,63}\.(%s)$' % ('|'.join(valid_domains),))
+    # If hostname is just a hostname without a domain suffix 
+    # like e.g. 'hostname' or 'mycomputer' we should accept it, but up to 
+    # 63 characters to be compatible with domain name restrictions written here:
+    # http://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_host_names
+    r2 = re.compile(r'^[A-Z0-9\-]{2,63}$')
+    if r1.match(addr.upper()) or r2.match(addr.upper()):
+        return True
+    return False
 		
 def recognize(addr):
     """
